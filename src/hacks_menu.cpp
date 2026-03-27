@@ -12,8 +12,8 @@ HMENU OpenHacksMenu::GenerateMenu()
     if (HMENU menu = CreatePopupMenu())
     {
         GenerateMenuUsingManager(menu, mFileMenuPtr, mainmenu_groups::file, L"File", CommandFileStart);
-        GenerateMenuUsingManager(menu, mViewMenuPtr, mainmenu_groups::view, L"View", CommandViewStart);
         GenerateMenuUsingManager(menu, mEditMenuPtr, mainmenu_groups::edit, L"Edit", CommandEditStart);
+        GenerateMenuUsingManager(menu, mViewMenuPtr, mainmenu_groups::view, L"View", CommandViewStart);
         GenerateMenuUsingManager(menu, mPlaybackMenuPtr, mainmenu_groups::playback, L"Playback", CommandPlaybackStart);
         GenerateMenuUsingManager(menu, mLibraryMenuPtr, mainmenu_groups::library, L"Library", CommandLibraryStart);
         GenerateMenuUsingManager(menu, mHelpMenuPtr, mainmenu_groups::help, L"Help", CommandHelpStart);
