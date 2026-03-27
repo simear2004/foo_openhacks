@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  SOLUTION_FILE_PATH: .
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: latest
+
+      - name: Create foobar2000 components directory
+        run: |
+          $platforms = @('win32', 'x64')
+          foreach ($platform in $platforms) {
+            $targetDir = Join-Path -Path $env:GITHUB_WORKSPACE -ChildPath "..\foobar2000\$platform\foobar2000\components"
+            New-Item -ItemType Directory -Force -Path $targetDir
+          }
+        shell: pwsh
+
+      - name: Build
+        working-directory: ${{env.SOLUTION_FILE_PATH}}
+        run: python build.py --rebuild
+
+      - name: Upload fb2k-component artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: foo_openhacks.fb2k-component
+          path: ${{env.SOLUTION_FILE_PATH}}/foo_openhacks.fb2k-component
+
+      - name: Collect PDB files
+        run: |
+          New-Item -ItemType Directory -Force -Path pdb/x86, pdb/x64
+          Copy-Item -Path bin/Win32/Release/foo_openhacks/foo_openhacks.pdb -Destination pdb/x86/ -ErrorAction SilentlyContinue
+          Copy-Item -Path bin/x64/Release/foo_openhacks/foo_openhacks.pdb -Destination pdb/x64/ -ErrorAction SilentlyContinue
+        shell: pwsh
+
+      - name: Upload PDB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: foo_openhacks-pdb
+          path: pdb/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Changelog
+        id: changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: .github/cliff.toml
+        env:
+          OUTPUT: CHANGES.md
+
+      - name: Download fb2k-component artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: foo_openhacks.fb2k-component
+          path: ./artifacts
+
+      - name: Download PDB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: foo_openhacks-pdb
+          path: ./pdb
+
+      - name: Package PDB files
+        run: |
+          cd pdb && zip -r ../foo_openhacks-pdb.zip .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.changelog.outputs.content }}
+          files: |
+            artifacts/*.fb2k-component
+            foo_openhacks-pdb.zip
