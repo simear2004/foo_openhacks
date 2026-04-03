@@ -22,11 +22,26 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: '3.x'
+
+    - name: Setup vcpkg (x86)
+      uses: johnwason/vcpkg-action@v7
+      with:
+        pkgs: minhook
+        triplet: x86-windows-static-md
+        token: ${{ secrets.GITHUB_TOKEN }}
+        revision: ${{ hashFiles('vcpkg.json') }}
+
+    - name: Setup vcpkg (x64)
+      uses: johnwason/vcpkg-action@v7
+      with:
+        pkgs: minhook
+        triplet: x64-windows-static-md
+        token: ${{ secrets.GITHUB_TOKEN }}
+        revision: ${{ hashFiles('vcpkg.json') }}
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v3
