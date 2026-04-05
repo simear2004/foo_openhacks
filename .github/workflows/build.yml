@@ -27,11 +27,19 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Setup vcpkg
+    - name: Setup vcpkg (x86)
       uses: johnwason/vcpkg-action@v7
       with:
-        manifest-dir: .
-        triplet: x86-windows-static-md,x64-windows-static-md
+        manifest-dir: ${{ github.workspace }}
+        triplet: x86-windows-static-md
+        token: ${{ secrets.GITHUB_TOKEN }}
+        revision: b5d1a94fb7f88fd835e360fd23a45a09ceedbf48
+
+    - name: Setup vcpkg (x64)
+      uses: johnwason/vcpkg-action@v7
+      with:
+        manifest-dir: ${{ github.workspace }}
+        triplet: x64-windows-static-md
         token: ${{ secrets.GITHUB_TOKEN }}
         revision: b5d1a94fb7f88fd835e360fd23a45a09ceedbf48
 
