@@ -80,6 +80,7 @@ bool EnableWindowShadow(HWND window, bool enable)
 {
     if (!IsCompositionEnabled())
         return false;
+
     if (enable)
     {
         static const MARGINS shadowMargins = {1, 1, 1, 1};
@@ -92,16 +93,26 @@ bool EnableWindowShadow(HWND window, bool enable)
     }
     else
     {
-        static const MARGINS noBorderMargins = {0, 0, 0, 0};
-        HRESULT hr = DwmExtendFrameIntoClientArea(window, &noBorderMargins);
-        
         if (IsWindows11OrGreater() == false)
         {
-            const BOOL ncrEnabled = FALSE;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_ENABLED, &ncrEnabled, sizeof(ncrEnabled));
+            static const MARGINS negativeMargins = {-1, -1, -1, -1};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &negativeMargins);
+            
+            const DWORD policy = DWMNCRP_ENABLED;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            return SUCCEEDED(hr);
         }
-        
-        return SUCCEEDED(hr);
+        else
+        {
+            static const MARGINS noBorderMargins = {0, 0, 0, 0};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &noBorderMargins);
+            
+            const DWORD policy = DWMNCRP_ENABLED;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            return SUCCEEDED(hr);
+        }
     }
 }
 
