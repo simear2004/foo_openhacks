@@ -137,6 +137,11 @@ void OpenHacksCore::OnHookMouseMove(LPMSG msg)
     if (OpenHacksVars::MainWindowFrameStyle != WindowFrameStyleNoBorder)
         return;
 
+    if (msg->hwnd != mMainWindow)
+    {
+        return;
+    }
+
     GUITHREADINFO threadInfo = {};
     threadInfo.cbSize = sizeof(threadInfo);
     if (GetGUIThreadInfo(GetCurrentThreadId(), &threadInfo))
@@ -173,6 +178,11 @@ void OpenHacksCore::OnHookLButtonDown(LPMSG msg)
     if (OpenHacksVars::MainWindowFrameStyle == WindowFrameStyleDefault)
         return;
 
+    if (msg->hwnd != mMainWindow)
+    {
+        return;
+    }
+
     GUITHREADINFO threadInfo = {};
     threadInfo.cbSize = sizeof(threadInfo);
     if (GetGUIThreadInfo(GetCurrentThreadId(), &threadInfo))
@@ -182,11 +192,6 @@ void OpenHacksCore::OnHookLButtonDown(LPMSG msg)
 
         const DWORD messagePos = GetMessagePos();
         const POINT pt = {GET_X_LPARAM(messagePos), GET_Y_LPARAM(messagePos)};
-
-        if (msg->hwnd != mMainWindow)
-        {
-            return;
-        }
 
         // simulate move
         const auto& pseudoCaption = OpenHacksVars::PseudoCaptionSettings.get_value();
