@@ -87,20 +87,6 @@ bool OpenHacksCore::OnSetCursor(HWND wnd, WPARAM wp, LPARAM lp)
     
     if (hittest == HTCLIENT) return false;
 
-    if ((GetKeyState(VK_LBUTTON) & 0x8000))
-    {
-        GUITHREADINFO threadInfo = {};
-        threadInfo.cbSize = sizeof(threadInfo);
-        if (GetGUIThreadInfo(GetCurrentThreadId(), &threadInfo))
-        {
-            if ((threadInfo.flags & GUI_INMOVESIZE) == 0)
-            {
-                SetCursor(LoadCursor(nullptr, IDC_ARROW));
-                return true;
-            }
-        }
-    }
-
     if (hittest == HTTOP || hittest == HTBOTTOM)
         SetCursor(LoadCursor(nullptr, IDC_SIZENS));
     else if (hittest == HTLEFT || hittest == HTRIGHT)
