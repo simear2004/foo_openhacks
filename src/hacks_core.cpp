@@ -89,8 +89,11 @@ bool OpenHacksCore::IsMainOrChildWindow(HWND wnd)
 
 POINT OpenHacksCore::GetBorderMetrics()
 {
+    // const int32_t cx = Utility::GetSystemMetricsForDpi(SM_CXFRAME, OpenHacksVars::DPI) + Utility::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, OpenHacksVars::DPI);
+    // const int32_t cy = Utility::GetSystemMetricsForDpi(SM_CYFRAME, OpenHacksVars::DPI) + Utility::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, OpenHacksVars::DPI);
     const int32_t cx = Utility::GetSystemMetricsForDpi(SM_CXFRAME, OpenHacksVars::DPI);
-    const int32_t cy = Utility::GetSystemMetricsForDpi(SM_CXFRAME, OpenHacksVars::DPI);
+    const int32_t cy = Utility::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, OpenHacksVars::DPI);
+    console::log("border metrics: {}, {}", cx, cy);
     return POINT{cx, cy};
 }
 
