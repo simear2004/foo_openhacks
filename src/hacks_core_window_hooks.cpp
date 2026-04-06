@@ -157,6 +157,7 @@ void OpenHacksCore::OnHookMouseMove(LPMSG msg)
             if (mRequireRevertCursor)
             {
                 mRequireRevertCursor = false;
+                SendMessage(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
             }
 
             return;
@@ -166,6 +167,7 @@ void OpenHacksCore::OnHookMouseMove(LPMSG msg)
         if (hittest != HTCLIENT)
         {
             mRequireRevertCursor = true;
+            SendMessage(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(hittest, WM_MOUSEMOVE));
         }
     }
 }
