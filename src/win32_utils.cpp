@@ -91,10 +91,10 @@ bool EnableWindowShadow(HWND window, bool enable)
         
         return SUCCEEDED(hr);
     }
-   else
-    {
-        static const MARGINS zeroMargins = {0, 0, 0, 0};
-        HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
+    else
+    { 
+        static const MARGINS noMargins = {0, 0, 0, 0};
+        HRESULT hr = DwmExtendFrameIntoClientArea(window, &noMargins);
         
         const DWORD policy = DWMNCRP_ENABLED;
         DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
