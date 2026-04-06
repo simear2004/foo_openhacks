@@ -89,8 +89,8 @@ bool OpenHacksCore::IsMainOrChildWindow(HWND wnd)
 
 POINT OpenHacksCore::GetBorderMetrics()
 {
-    const int32_t cx = 2;
-    const int32_t cy = 2;
+    const int32_t cx = Utility::GetSystemMetricsForDpi(SM_CXFRAME, OpenHacksVars::DPI);
+    const int32_t cy = Utility::GetSystemMetricsForDpi(SM_CXFRAME, OpenHacksVars::DPI);
     return POINT{cx, cy};
 }
 
