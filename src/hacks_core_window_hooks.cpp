@@ -134,13 +134,13 @@ LRESULT OpenHacksCore::OpenHacksGetMessageProc(int code, WPARAM wp, LPARAM lp)
 
 void OpenHacksCore::OnHookMouseMove(LPMSG msg)
 {
-    if (OpenHacksVars::MainWindowFrameStyle != WindowFrameStyleNoBorder)
-        return;
-
     if (msg->hwnd != mMainWindow)
     {
         return;
     }
+
+    if (OpenHacksVars::MainWindowFrameStyle == WindowFrameStyleDefault)
+        return;
 
     GUITHREADINFO threadInfo = {};
     threadInfo.cbSize = sizeof(threadInfo);
@@ -175,13 +175,13 @@ void OpenHacksCore::OnHookMouseMove(LPMSG msg)
 
 void OpenHacksCore::OnHookLButtonDown(LPMSG msg)
 {
-    if (OpenHacksVars::MainWindowFrameStyle == WindowFrameStyleDefault)
-        return;
-
     if (msg->hwnd != mMainWindow)
     {
         return;
     }
+
+    if (OpenHacksVars::MainWindowFrameStyle == WindowFrameStyleDefault)
+        return;
 
     GUITHREADINFO threadInfo = {};
     threadInfo.cbSize = sizeof(threadInfo);
@@ -203,24 +203,21 @@ void OpenHacksCore::OnHookLButtonDown(LPMSG msg)
             return;
         }
 
-        if (OpenHacksVars::MainWindowFrameStyle == WindowFrameStyleNoBorder)
+        // simulate resizing
+        const Rect rectForNonSizeing = GetRectForNonSizing();
+        if (!rectForNonSizeing.IsPointIn(pt))
         {
-            // simulate resizing
-            const Rect rectForNonSizeing = GetRectForNonSizing();
-            if (!rectForNonSizeing.IsPointIn(pt))
+            bool isInMoveSize = (threadInfo.flags & GUI_INMOVESIZE) != 0;
+            
+            if (isInMoveSize) return;
+            
+            const int32_t hittest = (int32_t)SendMessage(mMainWindow, WM_NCHITTEST, 0, MAKELPARAM(pt.x, pt.y));
+            if (hittest != HTCLIENT)
             {
-                bool isInMoveSize = (threadInfo.flags & GUI_INMOVESIZE) != 0;
-                
-                if (isInMoveSize) return;
-                
-                const int32_t hittest = (int32_t)SendMessage(mMainWindow, WM_NCHITTEST, 0, MAKELPARAM(pt.x, pt.y));
-                if (hittest != HTCLIENT)
-                {
-                    SendMessage(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(hittest, WM_MOUSEMOVE));
-                    SendMessage(mMainWindow, WM_SYSCOMMAND, SC_SIZE | HitTestToWMSZ(hittest), MAKELPARAM(pt.x, pt.y));
-                    msg->message = WM_NULL;
-                    return;
-                }
+                SendMessage(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(hittest, WM_MOUSEMOVE));
+                SendMessage(mMainWindow, WM_SYSCOMMAND, SC_SIZE | HitTestToWMSZ(hittest), MAKELPARAM(pt.x, pt.y));
+                msg->message = WM_NULL;
+                return;
             }
         }
     }
