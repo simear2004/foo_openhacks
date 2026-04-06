@@ -203,6 +203,9 @@ void Maximize(HWND wnd, WindowState& state)
             workArea.right - workArea.left,
             workArea.bottom - workArea.top,
             SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        
+        // Force redraw to prevent white screen on Windows 10
+        RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
 }
 
@@ -237,6 +240,9 @@ void Restore(HWND wnd, WindowState& state)
         // Notify frame changes
         SetWindowPos(wnd, HWND_TOP, 0, 0, 0, 0,
             SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        
+        // Force redraw to prevent white screen on Windows 10
+        RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
 }
 
@@ -355,6 +361,9 @@ void EnterFullscreen(HWND wnd, WindowState& state)
         screenArea.right - screenArea.left,
         screenArea.bottom - screenArea.top,
         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
+    // Force redraw to prevent white screen on Windows 10
+        RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
 }
 
 void ExitFullscreen(HWND wnd, WindowState& state)
@@ -377,6 +386,9 @@ void ExitFullscreen(HWND wnd, WindowState& state)
     // Notify frame changes
     SetWindowPos(wnd, HWND_TOP, 0, 0, 0, 0,
         SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+    // Force redraw to prevent white screen on Windows 10
+    RedrawWindow(wnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
 }
 
 bool IsFullscreen(HWND wnd)
