@@ -76,6 +76,8 @@ bool IsWindows11OrGreater()
            (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion == 0 && osvi.dwBuildNumber >= 22000);
 }
 
+// ... existing code ...
+
 bool EnableWindowShadow(HWND window, bool enable)
 {
     if (!IsCompositionEnabled())
@@ -92,26 +94,27 @@ bool EnableWindowShadow(HWND window, bool enable)
         return SUCCEEDED(hr);
     }
     else
-    {
+    { 
         if (IsWindows11OrGreater() == false)
         {
-            const BOOL ncrEnabled = FALSE;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_ENABLED, &ncrEnabled, sizeof(ncrEnabled));
+            static const MARGINS negativeMargins = {-1, -1, -1, -1};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &negativeMargins);
+            
+            const DWORD policy = DWMNCRP_ENABLED;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            return SUCCEEDED(hr);
         }
-        
-        static const MARGINS noMargins = {0, 0, 0, 0};
-        HRESULT hr = DwmExtendFrameIntoClientArea(window, &noMargins);
-        
-        const DWORD policy = DWMNCRP_DISABLED;
-        DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-        
-        if (IsWindows11OrGreater() == false)
+        else
         {
-            COLORREF borderColor = RGB(0, 0, 0);
-            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
+            static const MARGINS zeroMargins = {0, 0, 0, 0};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
+            
+            const DWORD policy = DWMNCRP_ENABLED;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            return SUCCEEDED(hr);
         }
-        
-        return SUCCEEDED(hr);
     }
 }
 
