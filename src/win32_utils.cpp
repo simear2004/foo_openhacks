@@ -78,20 +78,31 @@ bool IsWindows11OrGreater()
 
 bool EnableWindowShadow(HWND window, bool enable)
 {
-    // Only apply shadow on Windows 11 or later
-    if (!IsWindows11OrGreater())
+    if (!IsCompositionEnabled())
         return false;
-
-    if (IsCompositionEnabled())
+    if (enable)
     {
-        static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
-        const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
+        static const MARGINS shadowMargins = {1, 1, 1, 1};
+        HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
+        
         const DWORD policy = DWMNCRP_ENABLED;
-        std::ignore = DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-        return result;
+        DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+        
+        return SUCCEEDED(hr);
     }
-
-    return false;
+    else
+    {
+        static const MARGINS noBorderMargins = {0, 0, 0, 0};
+        HRESULT hr = DwmExtendFrameIntoClientArea(window, &noBorderMargins);
+        
+        if (IsWindows11OrGreater() == false)
+        {
+            const BOOL ncrEnabled = FALSE;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_ENABLED, &ncrEnabled, sizeof(ncrEnabled));
+        }
+        
+        return SUCCEEDED(hr);
+    }
 }
 
 uint32_t GetDPI(HWND window)
