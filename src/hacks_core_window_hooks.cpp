@@ -157,26 +157,18 @@ void OpenHacksCore::OnHookMouseMove(LPMSG msg)
             if (mRequireRevertCursor)
             {
                 mRequireRevertCursor = false;
-                PostMessageW(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+                SendMessage(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
             }
+
             return;
         }
 
         const int32_t hittest = (int32_t)SendMessage(mMainWindow, WM_NCHITTEST, 0, MAKELPARAM(pt.x, pt.y));
         if (hittest != HTCLIENT)
         {
-            if (!mRequireRevertCursor)
-            {
-                mRequireRevertCursor = true;
-                PostMessageW(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(hittest, WM_MOUSEMOVE));
-            }
-        }
-        else
-        {
-            if (mRequireRevertCursor)
-            {
-                mRequireRevertCursor = false;
-            }
+            mRequireRevertCursor = true;
+            SendMessage(mMainWindow, WM_SETCURSOR, (WPARAM)mMainWindow, MAKELPARAM(hittest, WM_MOUSEMOVE));
+            msg->message = WM_NULL;
         }
     }
 }
