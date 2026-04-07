@@ -99,65 +99,37 @@ bool EnableWindowShadow(HWND window, bool enable)
     if (!IsCompositionEnabled())
         return false;
 
-    if (IsWindows11OrGreater())
+    if (enable)
     {
-        // Windows 11: Use standard DWM shadow
-        static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
-        const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
+        LONG_PTR style = GetWindowLongPtr(window, GWL_STYLE);
+        style |= WS_THICKFRAME;
+        style &= ~WS_BORDER;
+        SetWindowLongPtr(window, GWL_STYLE, style);
+        
         const DWORD policy = DWMNCRP_ENABLED;
-        std::ignore = DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-        return result;
+        DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+        
+        // 负边距是关键
+        static const MARGINS shadowMargins = {-1, -1, -1, -1};
+        HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
+        
+        SetWindowPos(window, nullptr, 0, 0, 0, 0, 
+            SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        
+        return SUCCEEDED(hr);
     }
     else
     {
-        // Windows 10: Use enhanced approach that actually works
+        const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
+        DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
         
-        if (enable)
-        {
-            // Windows 10 requires a different approach than Windows 11
-            // The key is to use ENABLED policy but with proper border handling
-            
-            // Step 1: Enable non-client rendering to allow shadow display
-            const DWORD policy = DWMNCRP_ENABLED;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-            
-            // Step 2: Use larger margins for proper shadow visibility
-            static const MARGINS shadowMargins = {-1, -1, -1, -1};
-            HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
-            
-            // Step 3: Set border color to transparent to eliminate the white border
-            DWORD borderColor = 0x00000000; // Transparent black
-            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
-            
-            // Step 4: Set caption color to transparent as well
-            DWORD captionColor = 0x00000000; // Transparent black
-            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &captionColor, sizeof(captionColor));
-            
-            // Step 5: The key trick: Set window style to remove the border
-            // This is done at the window level, not DWM level
-            LONG_PTR style = GetWindowLongPtr(window, GWL_STYLE);
-            style &= ~(WS_BORDER | WS_THICKFRAME); // Remove border styles
-            SetWindowLongPtr(window, GWL_STYLE, style);
-            
-            // Step 6: Force window refresh to apply all changes
-            SetWindowPos(window, nullptr, 0, 0, 0, 0, 
-                SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            
-            return SUCCEEDED(hr);
-        }
-        else
-        {
-            // Disable shadow completely
-            const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-            
-            static const MARGINS zeroMargins = {0, 0, 0, 0};
-            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
-            
-            return SUCCEEDED(hr);
-        }
+        static const MARGINS zeroMargins = {0, 0, 0, 0};
+        HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
+        
+        return SUCCEEDED(hr);
     }
 }
+
 uint32_t GetDPI(HWND window)
 {
     LoadUtilityProc();
