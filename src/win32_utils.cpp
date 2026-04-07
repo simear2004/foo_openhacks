@@ -78,20 +78,47 @@ bool IsWindows11OrGreater()
 
 bool EnableWindowShadow(HWND window, bool enable)
 {
-    // Only apply shadow on Windows 11 or later
-    if (!IsWindows11OrGreater())
+    if (!IsCompositionEnabled())
         return false;
 
-    if (IsCompositionEnabled())
+    if (IsWindows11OrGreater())
     {
+        // Windows 11: Use standard DWM shadow
         static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
         const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
         const DWORD policy = DWMNCRP_ENABLED;
         std::ignore = DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
         return result;
     }
-
-    return false;
+    else
+    {
+        // Windows 10: Enable shadow and remove 1px border
+        if (enable)
+        {
+            // Enable shadow by extending frame into client area
+            static const MARGINS shadowMargins = {1, 1, 1, 1};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
+            
+            // Set non-client rendering policy to enabled
+            const DWORD policy = DWMNCRP_ENABLED;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            return SUCCEEDED(hr);
+        }
+        else
+        {
+            // Disable shadow and remove 1px border
+            // Set non-client rendering policy to use window style
+            const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            // Extend frame with zero margins to remove border
+            static const MARGINS zeroMargins = {0, 0, 0, 0};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
+            
+            return SUCCEEDED(hr);
+        }
+    }
 }
 
 uint32_t GetDPI(HWND window)
