@@ -110,39 +110,54 @@ bool EnableWindowShadow(HWND window, bool enable)
     }
     else
     {
-        // Windows 10: Always enable shadow with enhanced border removal
-        // For Windows 10, we'll always enable shadow and focus on removing the 1px border
+        // Windows 10: Use experimental approach for shadow and border
+        // Try different combinations to find the best balance
         
         if (enable)
         {
-            // Enhanced shadow enabling with complete border removal
-            
-            // Step 1: Set non-client rendering policy to disabled to prevent border drawing
-            const DWORD policy = DWMNCRP_DISABLED;
+            // Method 1: First try with larger margins and enabled rendering
+            const DWORD policy = DWMNCRP_ENABLED;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
-            // Step 2: Set border color to transparent to eliminate 1px border
-            DWORD borderColor = 0x00000000; // Transparent black
-            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
-            
-            // Step 3: Set caption color to transparent
-            DWORD captionColor = 0x00000000; // Transparent black  
-            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &captionColor, sizeof(captionColor));
-            
-            // Step 4: Set text color to transparent (additional measure)
-            DWORD textColor = 0x00000000; // Transparent black
-            DwmSetWindowAttribute(window, DWMWA_TEXT_COLOR, &textColor, sizeof(textColor));
-            
-            // Step 5: Extend frame with 1px margins to create shadow effect
-            static const MARGINS shadowMargins = {1, 1, 1, 1};
+            // Use larger margins for better shadow visibility
+            static const MARGINS shadowMargins = {8, 8, 8, 8};
             HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
             
-            // Step 6: Force window to recalculate non-client area
+            // Method 2: Try to make border transparent while keeping shadow
+            DWORD borderColor = 0x00FFFFFF; // Semi-transparent white (try different values)
+            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
+            
+            DWORD captionColor = 0x00FFFFFF; // Semi-transparent white
+            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &captionColor, sizeof(captionColor));
+            
+            // Method 3: Enable rounded corners for better shadow integration
+            DWORD cornerPreference = DWMWCP_ROUND;
+            DwmSetWindowAttribute(window, DWMWA_WINDOW_CORNER_PREFERENCE, &cornerPreference, sizeof(cornerPreference));
+            
+            // Force window refresh
             if (SUCCEEDED(hr))
             {
                 SetWindowPos(window, nullptr, 0, 0, 0, 0, 
                     SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            }
+            return SUCCEEDED(hr);
+        }
+        else
+        {
+            // Disable shadow completely with border removal
+            const DWORD policy = DWMNCRP_DISABLED;
+            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+            
+            // Make borders fully transparent
+            DWORD transparentColor = 0x00000000;
+            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &transparentColor, sizeof(transparentColor));
+            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &transparentColor, sizeof(transparentColor));
+            
+            // Reset corner preference
+            DWORD cornerPreference = DWMWCP_DEFAULT;
+            DwmSetWindowAttribute(window, DWMWA_WINDOW_CORNER_PREFERENCE, &cornerPreference, sizeof(cornerPreference));
+            
+            static const MARGINS zeroMargins = {0, 0, 0, 0};
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
             
             return SUCCEEDED(hr);
         }
