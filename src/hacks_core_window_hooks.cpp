@@ -93,17 +93,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     mMainWindow = pcwps->hwnd;
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
-                    
-                    if (OpenHacksVars::MainWindowFrameStyle != WindowFrameStyleDefault)
-                    {
-                        auto newStyle = static_cast<WindowFrameStyle>((int32_t)OpenHacksVars::MainWindowFrameStyle);
-                        Utility::ApplyWindowFrameStyle(mMainWindow, newStyle);
-                        
-                        if (newStyle == WindowFrameStyleNoBorder)
-                        {
-                            Utility::EnableWindowShadow(mMainWindow, true);
-                        }
-                    }
                 }
             }
 
