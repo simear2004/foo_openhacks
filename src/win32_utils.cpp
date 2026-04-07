@@ -15,11 +15,6 @@ DPI_AWARENESS(WINAPI* pfnGetAwarenessFromDpiAwarenessContext)(DPI_AWARENESS_CONT
 
 static std::once_flag staticLoadFlag;
 
-COLORREF GetFoobarBackgroundColor()
-{
-    return GetSysColor(COLOR_WINDOW);
-}
-
 static void LoadUtilityProc()
 {
     // clang-format off
@@ -83,44 +78,20 @@ bool IsWindows11OrGreater()
 
 bool EnableWindowShadow(HWND window, bool enable)
 {
-    if (!IsCompositionEnabled())
+    // Only apply shadow on Windows 11 or later
+    if (!IsWindows11OrGreater())
         return false;
 
-    if (enable)
+    if (IsCompositionEnabled())
     {
-        static const MARGINS shadowMargins = {1, 1, 1, 1};
-        HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
-        
+        static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
+        const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
         const DWORD policy = DWMNCRP_ENABLED;
-        DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-        
-        return SUCCEEDED(hr);
+        std::ignore = DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+        return result;
     }
-    else
-    { 
-        if (IsWindows11OrGreater())
-        {
-            static const MARGINS zeroMargins = {0, 0, 0, 0};
-            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
-            
-            const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-            
-            return SUCCEEDED(hr);
-        }
-        else
-        {
-            const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-            
-            static const MARGINS zeroMargins = {0, 0, 0, 0};
-            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
-            
-            RedrawWindow(window, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW);
 
-            return SUCCEEDED(hr);
-        }
-    }
+    return false;
 }
 
 uint32_t GetDPI(HWND window)
