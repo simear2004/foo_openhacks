@@ -321,7 +321,9 @@ void ApplyWindowFrameStyle(HWND wnd, WindowFrameStyle style)
         break;
 
     case WindowFrameStyleNoBorder:
-        newStyle &= ~(WS_CAPTION | WS_THICKFRAME);
+        newStyle |= WS_THICKFRAME;
+        newStyle &= ~(WS_CAPTION);
+        newStyle &= ~WS_BORDER;
         break;
 
     default:
