@@ -128,15 +128,6 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
             return CallWindowProc(mMainWindowOriginProc, wnd, msg, wp, -1);
         break;
 
-    case WM_NCCALCSIZE:
-        if (OpenHacksVars::MainWindowFrameStyle == WindowFrameStyleNoBorder && wp == TRUE)
-        {
-            LPNCCALCSIZE_PARAMS params = reinterpret_cast<LPNCCALCSIZE_PARAMS>(lp);
-            params->rgrc[0] = params->rgrc[1];
-            return 0;
-        }
-        break;
-
     case WM_SIZE:
         if (OnSize(wnd, wp, lp))
             return 0;
