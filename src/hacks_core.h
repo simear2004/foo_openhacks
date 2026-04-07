@@ -97,7 +97,6 @@ private:
     // windows hook handlers
     void OnHookMouseMove(LPMSG msg);
     void OnHookLButtonDown(LPMSG msg);
-    bool OnMove(HWND wnd, WPARAM wp, LPARAM lp);
 
 private:
     HWND mMainWindow = nullptr;
