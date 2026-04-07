@@ -5,6 +5,103 @@
 
 #pragma comment(lib, "dwmapi.lib")
 
+namespace
+{
+// Shadow window storage using window property
+const wchar_t* SHADOW_WINDOW_PROP = L"OpenHacks_ShadowWindow";
+
+LRESULT CALLBACK ShadowWindowProc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch (msg)
+    {
+    case WM_ERASEBKGND:
+        return 1;
+
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        BeginPaint(hWnd, &ps);
+        EndPaint(hWnd, &ps);
+        return 0;
+    }
+
+    case WM_NCHITTEST:
+        return HTTRANSPARENT;
+
+    case WM_NCCALCSIZE:
+        return 0;
+
+    default:
+        break;
+    }
+
+    return DefWindowProc(hWnd, msg, wp, lp);
+}
+
+HWND CreateShadowWindow(HWND mainWindow)
+{
+    if (HWND existing = reinterpret_cast<HWND>(GetProp(mainWindow, SHADOW_WINDOW_PROP)))
+    {
+        return existing;
+    }
+
+    const wchar_t* className = L"OpenHacks_ShadowWindow";
+    WNDCLASSW wc = {};
+
+    if (!GetClassInfoW(GetModuleHandle(nullptr), className, &wc))
+    {
+        wc.lpfnWndProc = ShadowWindowProc;
+        wc.lpszClassName = className;
+        wc.hInstance = GetModuleHandle(nullptr);
+        wc.style = CS_DBLCLKS;
+        RegisterClassW(&wc);
+    }
+
+    RECT parentRect;
+    GetWindowRect(mainWindow, &parentRect);
+
+    HWND shadowHwnd = CreateWindowExW(
+        WS_EX_NOACTIVATE | WS_EX_COMPOSITED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW,
+        className, L"",
+        WS_THICKFRAME,
+        parentRect.left + 1, parentRect.top + 2,
+        parentRect.right - parentRect.left - 4, 
+        parentRect.bottom - parentRect.top - 4,
+        nullptr, nullptr, GetModuleHandle(nullptr), nullptr
+    );
+
+    if (!shadowHwnd)
+        return nullptr;
+
+    SetProp(mainWindow, SHADOW_WINDOW_PROP, shadowHwnd);
+
+    BOOL dwmTransitionsDisabled = TRUE;
+    DwmSetWindowAttribute(shadowHwnd, DWMWA_TRANSITIONS_FORCEDISABLED, 
+                         &dwmTransitionsDisabled, sizeof(dwmTransitionsDisabled));
+
+    SetClassLongPtr(shadowHwnd, GCLP_HBRBACKGROUND, (LONG_PTR)GetStockObject(HOLLOW_BRUSH));
+
+    static const MARGINS shadowMargins = {1, 1, 1, 1};
+    DwmExtendFrameIntoClientArea(shadowHwnd, &shadowMargins);
+
+    ShowWindow(shadowHwnd, SW_SHOW);
+
+    return shadowHwnd;
+}
+
+void RemoveShadowWindow(HWND mainWindow)
+{
+    HWND shadowHwnd = reinterpret_cast<HWND>(GetProp(mainWindow, SHADOW_WINDOW_PROP));
+    if (shadowHwnd && IsWindow(shadowHwnd))
+    {
+        ShowWindow(shadowHwnd, SW_HIDE);
+        DestroyWindow(shadowHwnd);
+    }
+    RemoveProp(mainWindow, SHADOW_WINDOW_PROP);
+}
+
+} // anonymous namespace
+
 namespace Utility
 {
 int(WINAPI* pfnGetSystemMetricsForDpi)(int, UINT) = nullptr;
@@ -111,32 +208,43 @@ bool EnableWindowShadow(HWND window, bool enable)
     {
         if (enable)
         {
-            // Windows 10: Special technique to get shadow without border
-            
-            // Step 1: Set non-client rendering policy to ENABLED
-            const DWORD policy = DWMNCRP_ENABLED;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-            
-            // Step 2: Use negative margins for "sheet of glass" effect
-            static const MARGINS glassMargins = {-1, -1, -1, -1};
-            HRESULT hr = DwmExtendFrameIntoClientArea(window, &glassMargins);
-            
-            // Step 3: Force a redraw to apply changes
-            RedrawWindow(window, nullptr, nullptr, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
-            
-            return SUCCEEDED(hr);
+            HWND shadowHwnd = CreateShadowWindow(window);
+            return shadowHwnd != nullptr;
         }
         else
         {
-            // Disable shadow
-            const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
-            DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-            
-            static const MARGINS zeroMargins = {0, 0, 0, 0};
-            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
-            
-            return SUCCEEDED(hr);
+            RemoveShadowWindow(window);
+            return true;
         }
+    }
+}
+
+void UpdateShadowWindowPosition(HWND mainWindow)
+{
+    if (IsWindows11OrGreater())
+        return;
+
+    HWND shadowHwnd = reinterpret_cast<HWND>(GetProp(mainWindow, SHADOW_WINDOW_PROP));
+    if (shadowHwnd && IsWindow(shadowHwnd))
+    {
+        RECT parentRect;
+        GetWindowRect(mainWindow, &parentRect);
+
+        SetWindowPos(shadowHwnd, mainWindow,
+            parentRect.left + 1, parentRect.top + 2,
+            parentRect.right - parentRect.left - 4, 
+            parentRect.bottom - parentRect.top - 4,
+            SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW);
+
+        DwmFlush();
+    }
+}
+
+void DestroyShadowWindow(HWND mainWindow)
+{
+    if (!IsWindows11OrGreater())
+    {
+        RemoveShadowWindow(mainWindow);
     }
 }
 
@@ -343,15 +451,17 @@ void ApplyWindowFrameStyle(HWND wnd, WindowFrameStyle style)
 
     SetWindowLongPtr(wnd, GWL_STYLE, newStyle);
 
-    // Always enable shadow for all custom frame styles on Windows 10/11
-    // The shadow is handled by EnableWindowShadow which also removes the 1px border
     if (style != WindowFrameStyleDefault)
     {
         EnableWindowShadow(wnd, true);
     }
+    else
+    {
+        EnableWindowShadow(wnd, false);
+    }
 
-    // Notify frame changes
-    SetWindowPos(wnd, HWND_TOP, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    SetWindowPos(wnd, HWND_TOP, 0, 0, 0, 0, 
+                 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
 void EnterFullscreen(HWND wnd, WindowState& state)
