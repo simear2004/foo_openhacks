@@ -84,6 +84,9 @@ HWND CreateShadowWindow(HWND mainWindow)
     static const MARGINS shadowMargins = {1, 1, 1, 1};
     DwmExtendFrameIntoClientArea(shadowHwnd, &shadowMargins);
 
+    // Show shadow window behind the main window
+    SetWindowPos(shadowHwnd, mainWindow, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     ShowWindow(shadowHwnd, SW_SHOW);
 
     return shadowHwnd;
@@ -230,11 +233,12 @@ void UpdateShadowWindowPosition(HWND mainWindow)
         RECT parentRect;
         GetWindowRect(mainWindow, &parentRect);
 
+        // Use SWP_NOZORDER to maintain z-order relationship
         SetWindowPos(shadowHwnd, mainWindow,
             parentRect.left + 1, parentRect.top + 2,
             parentRect.right - parentRect.left - 4, 
             parentRect.bottom - parentRect.top - 4,
-            SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW);
+            SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOZORDER);
 
         DwmFlush();
     }
