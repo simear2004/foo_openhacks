@@ -17,18 +17,6 @@ static std::once_flag staticLoadFlag;
 
 COLORREF GetFoobarBackgroundColor()
 {
-    try
-    {
-        auto config = ui_config_manager::tryGet();
-        if (config.is_valid())
-        {
-            return config->get_color(ui_color_background);
-        }
-    }
-    catch (...)
-    {
-    }
-
     return GetSysColor(COLOR_WINDOW);
 }
 
