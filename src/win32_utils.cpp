@@ -109,11 +109,23 @@ bool EnableWindowShadow(HWND window, bool enable)
     }
     else
     {
+        // Windows 10: Handle active window border color
+        
         if (enable)
         {
+            // Step 1: Set border color to transparent/black to hide the active window border
+            // This removes the 1px accent color border that appears on active windows
+            COLORREF borderColor = RGB(0, 0, 0);
+            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
+            
+            // Step 2: Also set caption color to avoid any caption border
+            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &borderColor, sizeof(borderColor));
+            
+            // Step 3: Extend frame into client area to create shadow
             static const MARGINS shadowMargins = {1, 1, 1, 1};
             HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
             
+            // Step 4: Enable non-client rendering
             const DWORD policy = DWMNCRP_ENABLED;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
@@ -121,6 +133,7 @@ bool EnableWindowShadow(HWND window, bool enable)
         }
         else
         {
+            // Disable shadow
             const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
