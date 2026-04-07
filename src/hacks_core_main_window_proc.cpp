@@ -133,7 +133,7 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
         {
             LPNCCALCSIZE_PARAMS params = reinterpret_cast<LPNCCALCSIZE_PARAMS>(lp);
             params->rgrc[0] = params->rgrc[1];
-            return WVR_REDRAW;
+            return 0;
         }
         break;
 
