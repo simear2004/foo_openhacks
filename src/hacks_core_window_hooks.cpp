@@ -51,8 +51,6 @@ FORCEINLINE void UpdateBackgroundBrush()
         if (g_hBackgroundBrush) DeleteObject(g_hBackgroundBrush);
         g_hBackgroundBrush = CreateSolidBrush(currentColor);
         g_lastBgColor = currentColor;
-        console::printf("[OpenHacks] Global background brush updated to R=%d G=%d B=%d",
-                      GetRValue(currentColor), GetGValue(currentColor), GetBValue(currentColor));
     }
 }
 
@@ -106,8 +104,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 GetClassNameW(pcwps->hwnd, className, ARRAYSIZE(className));
                 if (className == kDUIMainWindowClassName)
                 {
-                    console::printf("[OpenHacks] WM_NCCREATE: Initializing background...");
-                    
                     UpdateBackgroundBrush();
                     
                     SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)g_hBackgroundBrush);
@@ -116,7 +112,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     if (!(style & WS_CLIPCHILDREN))
                     {
                         SetWindowLong(pcwps->hwnd, GWL_STYLE, style | WS_CLIPCHILDREN);
-                        console::printf("[OpenHacks] WS_CLIPCHILDREN added to prevent background leak");
                     }
                 }
             }
@@ -138,9 +133,23 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     console::printf("[OpenHacks] Window subclassed at WM_CREATE");
 
                     UpdateBackgroundBrush();
+                    
                     SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)g_hBackgroundBrush);
 
-                    RedrawWindow(pcwps->hwnd, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+                    if (HDC hdc = GetDC(pcwps->hwnd))
+                    {
+                        RECT rc;
+                        GetClientRect(pcwps->hwnd, &rc);
+                        FillRect(hdc, &rc, g_hBackgroundBrush);
+                        ReleaseDC(pcwps->hwnd, hdc);
+                        console::printf("[OpenHacks] Immediate background fill executed in WM_CREATE");
+                    }
+
+                    LONG style = GetWindowLong(pcwps->hwnd, GWL_STYLE);
+                    if (!(style & WS_CLIPCHILDREN))
+                    {
+                        SetWindowLong(pcwps->hwnd, GWL_STYLE, style | WS_CLIPCHILDREN);
+                    }
                 }
             }
             break;
