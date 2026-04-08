@@ -16,13 +16,13 @@
         [propput] STDMETHOD(name)(__VA_ARGS__)
 #endif
 
-[module(name = "foo_openhacks")];
+[module(name = "foo_openhacks_mod")];
 
 [
     object,
     dual,
     pointer_default(unique),
-    uuid("5faf8474-cde1-4fd4-8151-6ced18b7039b")
+    uuid("C9D0E1F2-A3B4-5678-3456-789012345678")
 ]
 __interface IOpenHacks : IDispatch
 {
