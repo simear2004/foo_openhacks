@@ -64,8 +64,6 @@ void OpenHacksCore::Initialize()
             {
                 ShowOrHideMenuBar(false);
             } */
-
-            ShowOrHideMenuBar(OpenHacksVars::ShowMainMenu);
         }
 
         if (HWND statusBar = FindWindowExW(window, nullptr, kDUIStatusBarClassName.data(), nullptr))
