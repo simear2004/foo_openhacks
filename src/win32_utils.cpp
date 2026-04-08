@@ -76,24 +76,6 @@ bool IsWindows11OrGreater()
            (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion == 0 && osvi.dwBuildNumber >= 22000);
 }
 
-// bool EnableWindowShadow(HWND window, bool enable)
-// {
-//     // Only apply shadow on Windows 11 or later
-//     if (!IsWindows11OrGreater())
-//         return false;
-
-//     if (IsCompositionEnabled())
-//     {
-//         static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
-//         const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
-//         const DWORD policy = DWMNCRP_ENABLED;
-//         std::ignore = DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
-//         return result;
-//     }
-
-//     return false;
-// }
-
 bool EnableWindowShadow(HWND window, bool enable)
 {
     if (!IsCompositionEnabled())
@@ -101,7 +83,6 @@ bool EnableWindowShadow(HWND window, bool enable)
 
     if (IsWindows11OrGreater())
     {
-        // Windows 11: Use standard DWM shadow
         static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
         const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
         const DWORD policy = DWMNCRP_ENABLED;
@@ -110,27 +91,35 @@ bool EnableWindowShadow(HWND window, bool enable)
     }
     else
     {
-        // Windows 10: Handle shadow and border separately
-        
+        // Windows 10: Check user preference
+        if (!OpenHacksVars::EnableWin10Shadow)
+        {
+            // User disabled shadow on Windows 10 - use original behavior (no shadow)
+            if (enable)
+            {
+                const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
+                DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+                
+                static const MARGINS zeroMargins = {0, 0, 0, 0};
+                DwmExtendFrameIntoClientArea(window, &zeroMargins);
+            }
+            return false;
+        }
+
+        // User enabled shadow on Windows 10
         if (enable)
         {
-            // Enable shadow while removing 1px border
-            
-            // Step 1: Set non-client rendering policy to disabled to prevent border drawing
-            const DWORD policy = DWMNCRP_DISABLED;
+            const DWORD policy = DWMNCRP_ENABLED;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
-            // Step 2: Extend frame with 1px margins to create shadow without border
-            // Using 1px margins creates the shadow effect
             static const MARGINS shadowMargins = {1, 1, 1, 1};
             HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
             
-            // Step 3: Force window to recalculate non-client area
-            if (SUCCEEDED(hr))
-            {
-                SetWindowPos(window, nullptr, 0, 0, 0, 0, 
-                    SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            }
+            DWORD borderColor = 0x00000000;
+            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
+            
+            DWORD captionColor = 0x00000000;
+            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &captionColor, sizeof(captionColor));
             
             return SUCCEEDED(hr);
         }
@@ -260,10 +249,8 @@ void Restore(HWND wnd, WindowState& state)
         state.wp.showCmd = SW_SHOWNORMAL;
         SetWindowPlacement(wnd, &state.wp);
         
-        // Re-enable DWM shadow if was NoBorder (no WS_THICKFRAME)
-        bool wasNoBorder = (state.style & WS_THICKFRAME) == 0;
-        if (wasNoBorder)
-            EnableWindowShadow(wnd, true);
+        // Re-enable DWM shadow for custom frame styles (NoCaption or NoBorder)
+        EnableWindowShadow(wnd, true);
         
         // Notify frame changes
         SetWindowPos(wnd, HWND_TOP, 0, 0, 0, 0,
@@ -406,11 +393,9 @@ void ExitFullscreen(HWND wnd, WindowState& state)
 
     // Restore from saved WINDOWPLACEMENT
     SetWindowPlacement(wnd, &state.wp);
-
-    // Re-enable DWM shadow if was NoBorder (no WS_THICKFRAME)
-    bool wasNoBorder = (state.style & WS_THICKFRAME) == 0;
-    if (wasNoBorder)
-        EnableWindowShadow(wnd, true);
+    
+    // Re-enable DWM shadow for custom frame styles (NoCaption or NoBorder)
+    EnableWindowShadow(wnd, true);
 
     // Notify frame changes
     SetWindowPos(wnd, HWND_TOP, 0, 0, 0, 0,
