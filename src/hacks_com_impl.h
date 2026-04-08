@@ -16,7 +16,7 @@ enum WindowStateEnum : LONG
     coclass,
     library_block,
     default(IOpenHacks),
-    uuid("7c87ccb2-aceb-4698-b31e-30855a6787ac")
+    uuid("D0E1F2A3-B4C5-6789-4567-890123456789")
 ]
 class OpenHacksCOM : public IOpenHacks
 {
