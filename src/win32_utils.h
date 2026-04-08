@@ -52,4 +52,7 @@ void ApplyWindowFrameStyle(HWND wnd, WindowFrameStyle style);
 void EnterFullscreen(HWND wnd, WindowState& state);
 void ExitFullscreen(HWND wnd, WindowState& state);
 bool IsFullscreen(HWND wnd);
+
+// Background color utilities
+COLORREF GetFoobarBackgroundColor();
 } // namespace Utility
