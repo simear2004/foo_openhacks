@@ -94,13 +94,12 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     
-                    // Set the window class background brush to match foobar2000's theme
+                    console::printf("[OpenHacks] Window subclassed via WM_CREATE hook");
+                    
+                    // Also set background brush here as backup
                     COLORREF bgColor = Utility::GetFoobarBackgroundColor();
                     HBRUSH hBrush = CreateSolidBrush(bgColor);
                     SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
-                    
-                    console::printf("[OpenHacks] Window subclassed, background brush set to R=%d G=%d B=%d",
-                                  GetRValue(bgColor), GetGValue(bgColor), GetBValue(bgColor));
                 }
             }
 
