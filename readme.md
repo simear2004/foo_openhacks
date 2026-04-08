@@ -24,7 +24,7 @@ Mod 版的功能：
 6、修改：调整窗口大小 sizing 的响应距离，以免与窄条滚动条重叠导致混乱的情况  
 7、修改：组件以 Mod 版本发布，以区别 ohyeah 大佬的原版
 
-感谢：
+感谢：  
 ohyeah(原版作者)  
 dreamawake(foobox主题作者测试反馈)
 
@@ -39,8 +39,9 @@ Mod version features:
 5. New: During the process of dragging the scroll bar on the edge of the window, if the mouse leaves the window range, the drag operation will still be performed.
 6. Modification: Adjust the response distance of window size sizing to avoid confusion caused by overlapping with narrow scroll bars.
 7. Modification: The component is released in Mod version to distinguish it from the original version of ohyeah boss
-Thanks to:
-ohyeah (original author)
+
+Thanks to:  
+ohyeah (original author)  
 dreamawake (foobox theme author test feedback)
 
 ### Build
