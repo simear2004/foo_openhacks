@@ -83,7 +83,6 @@ bool EnableWindowShadow(HWND window, bool enable)
 
     if (IsWindows11OrGreater())
     {
-        // Windows 11: Simple approach works
         static const MARGINS shadow_state[2]{{0, 0, 0, 0}, {1, 1, 1, 1}};
         const bool result = SUCCEEDED(DwmExtendFrameIntoClientArea(window, &shadow_state[enable ? 1 : 0]));
         const DWORD policy = DWMNCRP_ENABLED;
@@ -95,7 +94,7 @@ bool EnableWindowShadow(HWND window, bool enable)
         // Windows 10: Check user preference
         if (!OpenHacksVars::EnableWin10Shadow)
         {
-            // User disabled shadow on Windows 10
+            // User disabled shadow on Windows 10 - use original behavior (no shadow)
             const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
@@ -108,46 +107,30 @@ bool EnableWindowShadow(HWND window, bool enable)
         // User enabled shadow on Windows 10
         if (enable)
         {
-            // Check current window style
-            LONG style = static_cast<LONG>(GetWindowLongPtr(window, GWL_STYLE));
-            bool hasThickFrame = (style & WS_THICKFRAME) != 0;
-            
-            if (!hasThickFrame)
-            {
-                // NoBorder style: Cannot show shadow without WS_THICKFRAME on Windows 10
-                // This is a Windows limitation - shadow requires non-client area
-                return false;
-            }
-            
-            // NoCaption style: Has WS_THICKFRAME, can show shadow
             const DWORD policy = DWMNCRP_ENABLED;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
-            // Extend frame by 1px to create space for shadow
             static const MARGINS shadowMargins = {1, 1, 1, 1};
             HRESULT hr = DwmExtendFrameIntoClientArea(window, &shadowMargins);
             
-            // Set colors to make border invisible (blend with shadow)
-            DWORD blackColor = 0x00000000;
-            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &blackColor, sizeof(blackColor));
-            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &blackColor, sizeof(blackColor));
+            DWORD borderColor = 0x00000000;
+            DwmSetWindowAttribute(window, DWMWA_BORDER_COLOR, &borderColor, sizeof(borderColor));
             
-            // Force frame recalculation
-            SetWindowPos(window, nullptr, 0, 0, 0, 0, 
-                        SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+            DWORD captionColor = 0x00000000;
+            DwmSetWindowAttribute(window, DWMWA_CAPTION_COLOR, &captionColor, sizeof(captionColor));
             
             return SUCCEEDED(hr);
         }
         else
         {
-            // Disable shadow
+            // Disable shadow completely
             const DWORD policy = DWMNCRP_USEWINDOWSTYLE;
             DwmSetWindowAttribute(window, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
             
             static const MARGINS zeroMargins = {0, 0, 0, 0};
-            DwmExtendFrameIntoClientArea(window, &zeroMargins);
+            HRESULT hr = DwmExtendFrameIntoClientArea(window, &zeroMargins);
             
-            return true;
+            return SUCCEEDED(hr);
         }
     }
 }
