@@ -280,3 +280,51 @@ STDMETHODIMP OpenHacksCOM::put_PseudoCaptionBottomEnabled(VARIANT_BOOL value)
     OpenHacksVars::PseudoCaptionSettings.get_value().marginStates.bottom = TO_BOOLEAN(value);
     return S_OK;
 }
+
+STDMETHODIMP OpenHacksCOM::get_EnableWin10Shadow(VARIANT_BOOL* pValue)
+{
+    RETURN_HR_IF(pValue == nullptr, E_POINTER);
+    *pValue = TO_VARIANT_BOOL(OpenHacksVars::EnableWin10Shadow);
+    return S_OK;
+}
+
+STDMETHODIMP OpenHacksCOM::put_EnableWin10Shadow(VARIANT_BOOL value)
+{
+    const bool enabled = TO_BOOLEAN(value);
+    OpenHacksVars::EnableWin10Shadow = enabled;
+    
+    // Re-apply shadow to main window if using custom frame style
+    HWND mainWindow = core_api::get_main_window();
+    if (OpenHacksVars::MainWindowFrameStyle != 0) // Not Default style
+    {
+        Utility::EnableWindowShadow(mainWindow, true);
+    }
+    
+    return S_OK;
+}
+
+STDMETHODIMP OpenHacksCOM::get_DisableResizeWhenMaximized(VARIANT_BOOL* pValue)
+{
+    RETURN_HR_IF(pValue == nullptr, E_POINTER);
+    *pValue = TO_VARIANT_BOOL(OpenHacksVars::DisableResizeWhenMaximized);
+    return S_OK;
+}
+
+STDMETHODIMP OpenHacksCOM::put_DisableResizeWhenMaximized(VARIANT_BOOL value)
+{
+    OpenHacksVars::DisableResizeWhenMaximized = TO_BOOLEAN(value);
+    return S_OK;
+}
+
+STDMETHODIMP OpenHacksCOM::get_DisableResizeWhenFullscreen(VARIANT_BOOL* pValue)
+{
+    RETURN_HR_IF(pValue == nullptr, E_POINTER);
+    *pValue = TO_VARIANT_BOOL(OpenHacksVars::DisableResizeWhenFullscreen);
+    return S_OK;
+}
+
+STDMETHODIMP OpenHacksCOM::put_DisableResizeWhenFullscreen(VARIANT_BOOL value)
+{
+    OpenHacksVars::DisableResizeWhenFullscreen = TO_BOOLEAN(value);
+    return S_OK;
+}
