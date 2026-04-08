@@ -160,33 +160,19 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
         RECT rc;
         GetClientRect(wnd, &rc);
         
+        // 使用全局画刷或即时获取的颜色
         COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-        
         HBRUSH hBrush = CreateSolidBrush(bgColor);
         FillRect(hdc, &rc, hBrush);
         DeleteObject(hBrush);
         
-        return TRUE;
+        return TRUE; // 告诉系统：背景我画了，你别动
     }
 
     case WM_PAINT:
     {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(wnd, &ps);
-        
-        RECT rc;
-        GetClientRect(wnd, &rc);
-        COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-        HBRUSH hBrush = CreateSolidBrush(bgColor);
-        FillRect(hdc, &rc, hBrush);
-        DeleteObject(hBrush);
-        
-        console::printf("[OpenHacks] WM_PAINT: Background filled with R=%d G=%d B=%d",
-                      GetRValue(bgColor), GetGValue(bgColor), GetBValue(bgColor));
-
-        EndPaint(wnd, &ps);
-        
-        return 0;
+        // 让 foobar2000 原始过程处理所有前景内容绘制
+        return CallWindowProc(mMainWindowOriginProc, wnd, msg, wp, lp);
     }
 
     case WM_SYSCOMMAND:
