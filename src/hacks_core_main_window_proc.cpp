@@ -145,36 +145,8 @@ bool OpenHacksCore::OnSetCursor(HWND wnd, WPARAM wp, LPARAM lp)
     return true;
 }
 
-/* bool OpenHacksCore::OnSize(HWND wnd, WPARAM wp, LPARAM lp)
-{
-    return false;
-} */
-
 bool OpenHacksCore::OnSize(HWND wnd, WPARAM wp, LPARAM lp)
 {
-    if (mRebarWindow != nullptr && mMainMenuWindow != nullptr)
-    {
-        const UINT bandCount = (UINT)SendMessage(mRebarWindow, RB_GETBANDCOUNT, 0, 0);
-        for (UINT i = 0; i < bandCount; ++i)
-        {
-            REBARBANDINFO rebarInfo = {};
-            rebarInfo.cbSize = sizeof(rebarInfo);
-            rebarInfo.fMask = RBBIM_CHILD | RBBIM_STYLE;
-            SendMessage(mRebarWindow, RB_GETBANDINFO, (WPARAM)i, (LPARAM)&rebarInfo);
-            if (mMainMenuWindow == rebarInfo.hwndChild)
-            {
-                const bool isCurrentlyHidden = (rebarInfo.fStyle & RBBS_HIDDEN) != 0;
-                const bool shouldBeHidden = !OpenHacksVars::ShowMainMenu;
-                
-                if (isCurrentlyHidden != shouldBeHidden)
-                {
-                    SendMessage(mRebarWindow, RB_SHOWBAND, (WPARAM)i, (LPARAM)OpenHacksVars::ShowMainMenu);
-                }
-                break;
-            }
-        }
-    }
-    
     return false;
 }
 
