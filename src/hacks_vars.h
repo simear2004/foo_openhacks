@@ -31,7 +31,7 @@ struct PseudoCaptionParam
             bool bottom;
         };
         bool states[Margins::Max];
-    } marginStates = {true, true, true, false};
+    } marginStates = {false, false, false, false};
 
     static_assert(sizeof(marginStates) == Margins::Max * sizeof(bool));
 
