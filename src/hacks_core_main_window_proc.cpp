@@ -32,6 +32,21 @@ bool OpenHacksCore::OnSysCommand(HWND wnd, WPARAM wp, LPARAM lp)
     case SC_MOUSEMENU:
         return PopupMainMenu(wnd);
 
+    case SC_MOVE:
+        // When starting to move from pseudo-caption, check if we need to restore first
+        if (Utility::IsMaximized(wnd) || mSavedWindowState.has_value())
+        {
+            Restore();
+            break;
+        }
+        
+        if (Utility::IsFullscreen(wnd))
+        {
+            ExitFullscreen();
+            break;
+        }
+        break;
+
     default:
         break;
     }
