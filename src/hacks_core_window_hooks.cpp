@@ -84,7 +84,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
         {
         case WM_NCCREATE:
         {
-            // WM_NCCREATE 在 WM_CREATE 之前触发，这时设置背景刷最有效
             if (mMainWindow == nullptr)
             {
                 wchar_t className[MAX_PATH] = {};
@@ -118,11 +117,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     
                     console::printf("[OpenHacks] Window subclassed at WM_CREATE");
-                    
-                    // 再次确保背景刷设置（作为备份）
-                    COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-                    HBRUSH hBrush = CreateSolidBrush(bgColor);
-                    SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
                 }
             }
 
