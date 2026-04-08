@@ -82,6 +82,29 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
         const auto pcwps = reinterpret_cast<PCWPSTRUCT>(lp);
         switch (pcwps->message)
         {
+        case WM_NCCREATE:
+        {
+            // WM_NCCREATE 在 WM_CREATE 之前触发，这时设置背景刷最有效
+            if (mMainWindow == nullptr)
+            {
+                wchar_t className[MAX_PATH] = {};
+                GetClassNameW(pcwps->hwnd, className, ARRAYSIZE(className));
+                if (className == kDUIMainWindowClassName)
+                {
+                    console::printf("[OpenHacks] WM_NCCREATE received, setting background brush early");
+                    
+                    // 立即设置背景刷
+                    COLORREF bgColor = Utility::GetFoobarBackgroundColor();
+                    HBRUSH hBrush = CreateSolidBrush(bgColor);
+                    SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
+                    
+                    console::printf("[OpenHacks] Background brush set to R=%d G=%d B=%d at WM_NCCREATE",
+                                  GetRValue(bgColor), GetGValue(bgColor), GetBValue(bgColor));
+                }
+            }
+            break;
+        }
+
         case WM_CREATE:
         {
             if (mMainWindow == nullptr)
@@ -94,9 +117,9 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     
-                    console::printf("[OpenHacks] Window subclassed via WM_CREATE hook");
+                    console::printf("[OpenHacks] Window subclassed at WM_CREATE");
                     
-                    // Also set background brush here as backup
+                    // 再次确保背景刷设置（作为备份）
                     COLORREF bgColor = Utility::GetFoobarBackgroundColor();
                     HBRUSH hBrush = CreateSolidBrush(bgColor);
                     SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
