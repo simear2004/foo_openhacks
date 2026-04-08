@@ -94,7 +94,6 @@ private:
     LRESULT OnNCHitTest(HWND wnd, WPARAM wp, LPARAM lp);
     bool OnSetCursor(HWND wnd, WPARAM wp, LPARAM lp);
     bool OnSize(HWND wnd, WPARAM wp, LPARAM lp);
-    bool OnWindowPosChanging(HWND wnd, LPARAM lp);
     // windows hook handlers
     void OnHookMouseMove(LPMSG msg);
     void OnHookLButtonDown(LPMSG msg);
@@ -116,5 +115,4 @@ private:
 
     std::optional<WindowState> mSavedWindowState;
     bool mRequireRevertCursor = false;
-    bool mPendingMoveRestore = false;
 };
