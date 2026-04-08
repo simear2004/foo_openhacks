@@ -97,6 +97,7 @@ private:
     // windows hook handlers
     void OnHookMouseMove(LPMSG msg);
     void OnHookLButtonDown(LPMSG msg);
+    void OnHookLButtonDblClk(LPMSG msg);
 
 private:
     HWND mMainWindow = nullptr;
@@ -114,4 +115,8 @@ private:
 
     std::optional<WindowState> mSavedWindowState;
     bool mRequireRevertCursor = false;
+
+    // Pseudo-caption drag tracking
+    POINT mPseudoCaptionDragStart = {0, 0};
+    bool mPseudoCaptionDragStarted = false;
 };
