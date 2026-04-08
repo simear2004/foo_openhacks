@@ -117,6 +117,12 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     
                     console::printf("[OpenHacks] Window subclassed at WM_CREATE");
+
+                    // 【关键修改】在子类化完成后，立即强制重绘背景
+                    // RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN 确保所有区域都被重新绘制
+                    RedrawWindow(pcwps->hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+                    
+                    console::printf("[OpenHacks] Forced immediate redraw to apply background color");
                 }
             }
 
