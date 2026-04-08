@@ -54,6 +54,16 @@ FORCEINLINE void UpdateBackgroundBrush()
     }
 }
 
+void CleanupWindowHooksResources()
+{
+    if (g_hBackgroundBrush)
+    {
+        DeleteObject(g_hBackgroundBrush);
+        g_hBackgroundBrush = nullptr;
+        g_lastBgColor = CLR_INVALID;
+    }
+}
+
 } // namespace
 
 bool OpenHacksCore::InstallWindowHooks()
@@ -87,6 +97,8 @@ void OpenHacksCore::UninstallWindowHooks()
 {
     UninstallWindowHook(mGetMsgHook);
     UninstallWindowHook(mCallWndHook);
+    // Clean up global background brush
+    CleanupWindowHooksResources();
 }
 
 LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
