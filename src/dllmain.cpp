@@ -30,6 +30,6 @@ BOOL APIENTRY DllMain(HMODULE mod, DWORD reason, LPVOID /*reserved*/)
 
 namespace
 {
-DECLARE_COMPONENT_VERSION_COPY("OpenHacks", HACKS_VERSION, GetOpenHacksAbout())
-// VALIDATE_COMPONENT_FILENAME("foo_openhacks.dll")
+DECLARE_COMPONENT_VERSION_COPY("OpenHacksMod", HACKS_VERSION, GetOpenHacksAbout())
+// VALIDATE_COMPONENT_FILENAME("foo_openhacks_mod.dll")
 } // namespace
