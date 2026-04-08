@@ -24,7 +24,7 @@ public:
     OpenHacksCOM();
     ~OpenHacksCOM();
 
-    static inline LPCOLESTR PROGID_OpenHacks = OLESTR("OpenHacks");
+    static inline LPCOLESTR PROGID_OpenHacks = OLESTR("OpenHacksMod");
 
     static HRESULT Initialise(HMODULE mod);
     static HRESULT RegisterOpenHacksObject();
