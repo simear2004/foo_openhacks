@@ -156,7 +156,7 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
     {
     case WM_ERASEBKGND:
     {
-        HDC hdc = (HDC)wParam;
+        HDC hdc = (HDC)wp;
         RECT rc;
         GetClientRect(wnd, &rc);
         
