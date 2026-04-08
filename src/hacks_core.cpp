@@ -60,10 +60,11 @@ void OpenHacksCore::Initialize()
             mReBarOriginProc = (WNDPROC)SetWindowLongPtr(mRebarWindow, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksReBarProc);
             mMainMenuWindow = FindWindowExW(mRebarWindow, nullptr, kDUIMainMenuBandClassName.data(), nullptr);
 
-            if (OpenHacksVars::ShowMainMenu == false)
+            /* if (OpenHacksVars::ShowMainMenu == false)
             {
                 ShowOrHideMenuBar(false);
-            }
+            } */
+            ShowOrHideMenuBar(OpenHacksVars::ShowMainMenu);
         }
 
         if (HWND statusBar = FindWindowExW(window, nullptr, kDUIStatusBarClassName.data(), nullptr))
