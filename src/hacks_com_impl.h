@@ -62,6 +62,22 @@ public:
     STDMETHOD(get_WindowFrameStyle)(LONG* pValue);
     STDMETHOD(put_WindowFrameStyle)(LONG value);
 
+    STDMETHOD(get_WindowFrameStyle)(LONG* pValue);
+    STDMETHOD(put_WindowFrameStyle)(LONG value);
+
+    STDMETHOD(get_EnableWin10Shadow)(VARIANT_BOOL* pValue);
+    STDMETHOD(put_EnableWin10Shadow)(VARIANT_BOOL value);
+
+    STDMETHOD(get_DisableResizeWhenMaximized)(VARIANT_BOOL* pValue);
+    STDMETHOD(put_DisableResizeWhenMaximized)(VARIANT_BOOL value);
+
+    STDMETHOD(get_DisableResizeWhenFullscreen)(VARIANT_BOOL* pValue);
+    STDMETHOD(put_DisableResizeWhenFullscreen)(VARIANT_BOOL value);
+
+    // PseudoCaptionSettings Properties
+    STDMETHOD(get_PseudoCaptionLeft)(LONG* pValue);
+    STDMETHOD(put_PseudoCaptionLeft)(LONG value);
+
     // PseudoCaptionSettings Properties
     STDMETHOD(get_PseudoCaptionLeft)(LONG* pValue);
     STDMETHOD(put_PseudoCaptionLeft)(LONG value);
