@@ -25,8 +25,8 @@ cfg_bool ShowMainMenu(cfg_guid_show_main_menu, true);
 cfg_bool ShowStatusBar(cfg_guid_show_status_bar, true);
 cfg_int MainWindowFrameStyle(cfg_guid_main_window_frame_style, 0);
 cfg_bool EnableWin10Shadow(cfg_guid_enable_win10_shadow, false);
-cfg_bool DisableResizeWhenMaximized(cfg_guid_disable_resize_maximized, false);
-cfg_bool DisableResizeWhenFullscreen(cfg_guid_disable_resize_fullscreen, false);
+cfg_bool DisableResizeWhenMaximized(cfg_guid_disable_resize_maximized, true);
+cfg_bool DisableResizeWhenFullscreen(cfg_guid_disable_resize_fullscreen, true);
 cfg_struct_t<PseudoCaptionParam> PseudoCaptionSettings(cfg_guid_pseudo_caption);
 cfg_struct_t<WindowStateData> SavedWindowState(cfg_guid_saved_window_state);
 
