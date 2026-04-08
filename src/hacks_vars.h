@@ -127,6 +127,9 @@ static const char* kOpenHacksHelpURL = "https://github.com/ttsping/foo_openhacks
 extern cfg_bool ShowMainMenu;
 extern cfg_bool ShowStatusBar;
 extern cfg_int MainWindowFrameStyle;
+extern cfg_bool EnableWin10Shadow;
+extern cfg_bool DisableResizeWhenMaximized;
+extern cfg_bool DisableResizeWhenFullscreen;
 extern cfg_struct_t<PseudoCaptionParam> PseudoCaptionSettings;
 extern cfg_struct_t<WindowStateData> SavedWindowState;
 
@@ -141,6 +144,21 @@ FORCEINLINE void ToggleShowMainMenu()
 FORCEINLINE void ToggleShowStatusBar()
 {
     ShowStatusBar = !ShowStatusBar;
+}
+
+FORCEINLINE void ToggleEnableWin10Shadow()
+{
+    EnableWin10Shadow = !EnableWin10Shadow;
+}
+
+FORCEINLINE void ToggleDisableResizeWhenMaximized()
+{
+    DisableResizeWhenMaximized = !DisableResizeWhenMaximized;
+}
+
+FORCEINLINE void ToggleDisableResizeWhenFullscreen()
+{
+    DisableResizeWhenFullscreen = !DisableResizeWhenFullscreen;
 }
 
 void InitialseOpenHacksVars();
