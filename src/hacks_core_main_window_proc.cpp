@@ -171,7 +171,22 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
 
     case WM_PAINT:
     {
-        return CallWindowProc(mMainWindowOriginProc, wnd, msg, wp, lp);
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(wnd, &ps);
+        
+        RECT rc;
+        GetClientRect(wnd, &rc);
+        COLORREF bgColor = Utility::GetFoobarBackgroundColor();
+        HBRUSH hBrush = CreateSolidBrush(bgColor);
+        FillRect(hdc, &rc, hBrush);
+        DeleteObject(hBrush);
+        
+        console::printf("[OpenHacks] WM_PAINT: Background filled with R=%d G=%d B=%d",
+                      GetRValue(bgColor), GetGValue(bgColor), GetBValue(bgColor));
+
+        EndPaint(wnd, &ps);
+        
+        return 0;
     }
 
     case WM_SYSCOMMAND:
