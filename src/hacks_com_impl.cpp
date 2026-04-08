@@ -22,8 +22,8 @@ STDMETHODIMP OpenHacksCOM::get_MenuBarVisible(VARIANT_BOOL* pValue)
 STDMETHODIMP OpenHacksCOM::put_MenuBarVisible(VARIANT_BOOL value)
 {
     const bool visible = TO_BOOLEAN(value);
-    if (OpenHacksCore::Get().ShowOrHideMenuBar(visible))
-        OpenHacksVars::ShowMainMenu = (visible);
+    OpenHacksVars::ShowMainMenu = visible;
+    OpenHacksCore::Get().ShowOrHideMenuBar(visible);
     return S_OK;
 }
 
