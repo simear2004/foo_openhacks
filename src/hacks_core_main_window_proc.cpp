@@ -156,15 +156,6 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
     {
     case WM_ERASEBKGND:
     {
-        HDC hdc = (HDC)wp;
-        RECT rc;
-        GetClientRect(wnd, &rc);
-        
-        COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-        HBRUSH hBrush = CreateSolidBrush(bgColor);
-        FillRect(hdc, &rc, hBrush);
-        DeleteObject(hBrush);
-        
         return TRUE;
     }
 
