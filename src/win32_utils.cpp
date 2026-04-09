@@ -429,46 +429,4 @@ bool IsFullscreen(HWND wnd)
            windowRect.bottom == monitorRect.bottom;
 }
 
-COLORREF GetFoobarBackgroundColor()
-{
-    // Method 1: Try to get from ui_config_manager (foobar2000 v2.0+)
-    try {
-        service_ptr_t<ui_config_manager> configMgr = ui_config_manager::tryGet();
-        if (configMgr.is_valid()) {
-            t_ui_color color = 0;
-            if (configMgr->query_color(ui_color_background, color)) {
-                return static_cast<COLORREF>(color);
-            }
-            
-            // Fallback to dark mode default if query fails but manager is valid
-            if (configMgr->is_dark_mode()) {
-                return RGB(32, 32, 32);
-            }
-        }
-    }
-    catch (...) {
-        // Ignore exceptions
-    }
-    
-    // Method 2: Check registry for Windows app mode (dark/light)
-    HKEY hKey;
-    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 
-                      0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-        DWORD appsUseLightTheme = 1;
-        DWORD size = sizeof(appsUseLightTheme);
-        if (RegQueryValueExW(hKey, L"AppsUseLightTheme", nullptr, nullptr, 
-                             reinterpret_cast<LPBYTE>(&appsUseLightTheme), &size) == ERROR_SUCCESS) {
-            RegCloseKey(hKey);
-            if (appsUseLightTheme == 0) {
-                return RGB(32, 32, 32);
-            }
-        } else {
-            RegCloseKey(hKey);
-        }
-    }
-    
-    // Fallback: Use system window background color
-    return GetSysColor(COLOR_WINDOW);
-}
-
 } // namespace Utility
