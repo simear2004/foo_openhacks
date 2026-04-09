@@ -117,13 +117,16 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 if (className == kDUIMainWindowClassName)
                 {
                     UpdateBackgroundBrush();
-                    
                     SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)g_hBackgroundBrush);
                     
                     LONG style = GetWindowLong(pcwps->hwnd, GWL_STYLE);
                     if (!(style & WS_CLIPCHILDREN))
                     {
                         SetWindowLong(pcwps->hwnd, GWL_STYLE, style | WS_CLIPCHILDREN);
+                    }
+                    if (!(style & WS_CLIPSIBLINGS))
+                    {
+                        SetWindowLong(pcwps->hwnd, GWL_STYLE, style | WS_CLIPSIBLINGS);
                     }
                 }
             }
@@ -140,28 +143,9 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 {
                     mMainWindow = pcwps->hwnd;
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
-                    OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     
-                    console::printf("[OpenHacks] Window subclassed at WM_CREATE");
-
-                    UpdateBackgroundBrush();
-                    
-                    SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)g_hBackgroundBrush);
-
-                    if (HDC hdc = GetDC(pcwps->hwnd))
-                    {
-                        RECT rc;
-                        GetClientRect(pcwps->hwnd, &rc);
-                        FillRect(hdc, &rc, g_hBackgroundBrush);
-                        ReleaseDC(pcwps->hwnd, hdc);
-                        console::printf("[OpenHacks] Immediate background fill executed in WM_CREATE");
-                    }
-
-                    LONG style = GetWindowLong(pcwps->hwnd, GWL_STYLE);
-                    if (!(style & WS_CLIPCHILDREN))
-                    {
-                        SetWindowLong(pcwps->hwnd, GWL_STYLE, style | WS_CLIPCHILDREN);
-                    }
+                    InvalidateRect(mMainWindow, NULL, TRUE);
+                    UpdateWindow(mMainWindow);
                 }
             }
             break;
