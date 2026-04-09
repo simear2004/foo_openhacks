@@ -166,6 +166,8 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 if (className == kDUIMainWindowClassName)
                 {
                     SetWindowSubclass(pcwps->hwnd, EarlyWindowSubclassProc, 0, 0);
+                    InvalidateRect(pcwps->hwnd, NULL, TRUE);
+                    UpdateWindow(pcwps->hwnd);
                     console::printf("[OpenHacks] Early window subclassing applied at WM_NCCREATE");
                 }
             }
