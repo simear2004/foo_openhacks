@@ -3,6 +3,7 @@ import subprocess
 import shutil
 import argparse
 import re
+import glob
 
 # Configuration
 SEVEN_ZIP_EXE = r'tools\7z.exe'
@@ -71,8 +72,15 @@ def create_component_package(temp_dir, version):
         SEVEN_ZIP_EXE, 'a', '-tzip', package_name, '.'
     ], cwd=temp_dir, check=True)
     print(f"Created component archive: {package_name}")
-    # Copy .fb2k-component file to solution dir
-    shutil.copy2(os.path.join(temp_dir, package_name), os.getcwd())
+    
+    src_path = os.path.join(temp_dir, package_name)
+    dst_path = os.path.join(os.getcwd(), package_name)
+    shutil.copy2(src_path, dst_path)
+    print(f"Copied to: {dst_path}")
+    
+    also_copy_as = os.path.join(os.getcwd(), f'{PROJECT_NAME}.fb2k-component')
+    shutil.copy2(src_path, also_copy_as)
+    print(f"Also copied as: {also_copy_as}")
 
 def main():
     parser = argparse.ArgumentParser()
