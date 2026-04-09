@@ -154,49 +154,6 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
 {
     switch (msg)
     {
-    case WM_ERASEBKGND:
-    {
-        return TRUE;
-    }
-
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(wnd, &ps);
-        
-        RECT rc;
-        GetClientRect(wnd, &rc);
-        
-        HDC hdcMem = CreateCompatibleDC(hdc);
-        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, rc.right - rc.left, rc.bottom - rc.top);
-        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
-        
-        COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-        HBRUSH hBrush = CreateSolidBrush(bgColor);
-        FillRect(hdcMem, &rc, hBrush);
-        DeleteObject(hBrush);
-        
-        BitBlt(hdc, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, hdcMem, 0, 0, SRCCOPY);
-        
-        SelectObject(hdcMem, hOldBitmap);
-        DeleteObject(hBitmap);
-        DeleteDC(hdcMem);
-        
-        EndPaint(wnd, &ps);
-        
-        return CallWindowProc(mMainWindowOriginProc, wnd, msg, wp, lp);
-    }
-
-    case WM_SHOWWINDOW:
-    {
-        if (wp == TRUE)
-        {
-            InvalidateRect(wnd, NULL, TRUE);
-            UpdateWindow(wnd);
-        }
-        break;
-    }
-
     case WM_SYSCOMMAND:
         if (OnSysCommand(wnd, wp, lp))
             return 0;
@@ -220,7 +177,7 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
             return 0;
         break;
 
-    case WM_DPICHANGED:
+    case WM_DPICHANGED: // fixme: won't receive currently(DPI System aware).
         OpenHacksVars::DPI = static_cast<uint32_t>(LOWORD(wp));
         break;
 
