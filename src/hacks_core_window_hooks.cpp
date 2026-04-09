@@ -2,55 +2,6 @@
 #include "hacks_core.h"
 #include "hacks_vars.h"
 #include "win32_utils.h"
-#include <uxtheme.h>
-
-static LRESULT CALLBACK EarlyWindowSubclassProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
-{
-    switch (uMsg)
-    {
-    case WM_NCCREATE:
-    {
-        COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-        HBRUSH hBrush = CreateSolidBrush(bgColor);
-        SetClassLongPtr(hWnd, GCLP_HBRBACKGROUND, (LONG_PTR)hBrush);
-        
-        LONG style = GetWindowLong(hWnd, GWL_STYLE);
-        SetWindowLong(hWnd, GWL_STYLE, style | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
-        break;
-    }
-    
-    case WM_ERASEBKGND:
-    {
-        HDC hdc = (HDC)wParam;
-        RECT rc;
-        GetClientRect(hWnd, &rc);
-        
-        COLORREF bgColor = Utility::GetFoobarBackgroundColor();
-        HBRUSH hBrush = CreateSolidBrush(bgColor);
-        FillRect(hdc, &rc, hBrush);
-        DeleteObject(hBrush);
-        
-        return TRUE;
-    }
-    
-    case WM_SHOWWINDOW:
-    {
-        if (wParam == TRUE)
-        {
-            InvalidateRect(hWnd, NULL, TRUE);
-            UpdateWindow(hWnd);
-        }
-        break;
-    }
-    
-    case WM_DESTROY:
-        // 清理子类化
-        RemoveWindowSubclass(hWnd, EarlyWindowSubclassProc, uIdSubclass);
-        break;
-    }
-    
-    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
-}
 
 namespace
 {
@@ -89,30 +40,6 @@ FORCEINLINE INT HitTestToWMSZ(INT hittest)
     return 0;
 }
 
-static HBRUSH g_hBackgroundBrush = nullptr;
-static COLORREF g_lastBgColor = CLR_INVALID;
-
-FORCEINLINE void UpdateBackgroundBrush()
-{
-    COLORREF currentColor = Utility::GetFoobarBackgroundColor();
-    if (currentColor != g_lastBgColor)
-    {
-        if (g_hBackgroundBrush) DeleteObject(g_hBackgroundBrush);
-        g_hBackgroundBrush = CreateSolidBrush(currentColor);
-        g_lastBgColor = currentColor;
-    }
-}
-
-void CleanupWindowHooksResources()
-{
-    if (g_hBackgroundBrush)
-    {
-        DeleteObject(g_hBackgroundBrush);
-        g_hBackgroundBrush = nullptr;
-        g_lastBgColor = CLR_INVALID;
-    }
-}
-
 } // namespace
 
 bool OpenHacksCore::InstallWindowHooks()
@@ -146,8 +73,6 @@ void OpenHacksCore::UninstallWindowHooks()
 {
     UninstallWindowHook(mGetMsgHook);
     UninstallWindowHook(mCallWndHook);
-    // Clean up global background brush
-    CleanupWindowHooksResources();
 }
 
 LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
@@ -157,23 +82,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
         const auto pcwps = reinterpret_cast<PCWPSTRUCT>(lp);
         switch (pcwps->message)
         {
-        case WM_NCCREATE:
-        {
-            if (mMainWindow == nullptr)
-            {
-                wchar_t className[MAX_PATH] = {};
-                GetClassNameW(pcwps->hwnd, className, ARRAYSIZE(className));
-                if (className == kDUIMainWindowClassName)
-                {
-                    SetWindowSubclass(pcwps->hwnd, EarlyWindowSubclassProc, 0, 0);
-                    InvalidateRect(pcwps->hwnd, NULL, TRUE);
-                    UpdateWindow(pcwps->hwnd);
-                    console::printf("[OpenHacks] Early window subclassing applied at WM_NCCREATE");
-                }
-            }
-            break;
-        }
-
         case WM_CREATE:
         {
             if (mMainWindow == nullptr)
@@ -184,11 +92,12 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 {
                     mMainWindow = pcwps->hwnd;
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
-                    
+                    OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     InvalidateRect(mMainWindow, NULL, TRUE);
                     UpdateWindow(mMainWindow);
                 }
             }
+
             break;
         }
 
