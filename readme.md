@@ -28,6 +28,9 @@ Requirements:
 ohyeah (original author)  
 dreamawake (foobox theme author test feedback)
 
+### Download（English version）：  
+In MSBuild：https://github.com/simear2004/foo_openhacks_mod/actions/
+
 ### Mod 版的功能：  
 1、新增：3个API接口，默认为true：  
      EnableWin10Shadow = true;                   //win10下启用窗口阴影，活动窗口时会产生边框(可js脚本消除处理)  
@@ -43,6 +46,9 @@ dreamawake (foobox theme author test feedback)
 ### 感谢：  
 ohyeah(原版作者)  
 dreamawake(foobox主题作者测试反馈)
+
+### 下载（中文版本）：  
+[https://github.com/simear2004/foo_openhacks_mod/actions/（MSBuild）](https://www.esnpc.com/foo_openhacks_mod-for-foobar2000/)
 
 ### Build
 Visual Studio 2022
