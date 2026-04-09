@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil
 import argparse
+import re
 
 # Configuration
 SEVEN_ZIP_EXE = r'tools\7z.exe'
@@ -45,8 +46,26 @@ def get_output_path(platform, configuration):
     platform_dir = 'win32' if platform.lower() == 'x86' else platform
     return os.path.join('bin', platform_dir, configuration, PROJECT_NAME)
 
-def create_component_package(temp_dir):
-    package_name = f'{PROJECT_NAME}.fb2k-component'
+def get_version_from_header():
+    version_file = os.path.join(os.getcwd(), 'src', 'hacks_version.h')
+    if not os.path.exists(version_file):
+        print(f"Warning: Version file not found at {version_file}, using default version")
+        return "0.0.0.0"
+    
+    with open(version_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    match = re.search(r'#define\s+HACKS_VERSION_NUM\s+"([^"]+)"', content)
+    if match:
+        version = match.group(1)
+        print(f"Detected version: {version}")
+        return version
+    else:
+        print("Warning: Could not parse version from header file, using default version")
+        return "0.0.0.0"
+
+def create_component_package(temp_dir, version):
+    package_name = f'{PROJECT_NAME}_v{version}.fb2k-component'
     print(f'Creating component package {package_name}...')
     subprocess.run([
         SEVEN_ZIP_EXE, 'a', '-tzip', package_name, '.'
@@ -68,7 +87,9 @@ def main():
     vs_install_dir = get_vs_install_dir()
     print(f'Using Visual Studio installation at: {vs_install_dir}')
 
-    # Step 1: Build x86 and x64
+    version = get_version_from_header()
+	
+	# Step 1: Build x86 and x64
     for platform in platforms:
         build_project(vs_install_dir, platform, configuration, rebuild=rebuild)
 
@@ -95,7 +116,7 @@ def main():
         shutil.copy2(dll_src, dll_dst)
 
     # Step 4: Create component package from version directory
-    create_component_package(public_dir)
+    create_component_package(public_dir, version)
     
     # Step 5: Clean up
     if os.path.exists(public_dir):
