@@ -72,12 +72,12 @@ namespace OpenHacksVars
         if (!g_fb2k_root.empty()) {
             SetEnvironmentVariableA("fb2k", g_fb2k_root.c_str());
             SetEnvironmentVariableA("foobar2000", g_fb2k_root.c_str());
-            console::printf("[OpenHacks] Env var 'fb2k' injected: %s", g_fb2k_root.c_str());
+            //console::printf("[OpenHacks] Env var 'fb2k' injected: %s", g_fb2k_root.c_str());
         }
 
         if (!g_fb2k_profile.empty()) {
             SetEnvironmentVariableA("fb2k_profile", g_fb2k_profile.c_str());
-            console::printf("[OpenHacks] Env var 'fb2k_profile' injected: %s", g_fb2k_profile.c_str());
+            //console::printf("[OpenHacks] Env var 'fb2k_profile' injected: %s", g_fb2k_profile.c_str());
         }
         
         auto& pseudoCaption = PseudoCaptionSettings.get_value();
@@ -133,7 +133,7 @@ bool custom_path_field_provider::process_field(uint32_t index, metadb_handle* ha
     }
 
     if (path_str) {
-        console::formatter() << "[OpenHacks Debug] %" << kDisplayFields[index].name << "% resolved to: " << path_str << "\n";
+        //console::formatter() << "[OpenHacks Debug] %" << kDisplayFields[index].name << "% resolved to: " << path_str << "\n";
         out->write(titleformat_inputtypes::unknown, path_str, strlen(path_str));
         return true;
     }
