@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <string>
 #include "win32_utils.h"
-#include <foobar2000/SDK/titleformat.h>
 
 #pragma pack(push)
 #pragma pack(1)
@@ -128,12 +127,6 @@ namespace OpenHacksVars
 
     extern std::string g_fb2k_root;
     extern std::string g_fb2k_profile;
-
-    class PathVarHook : public titleformat_hook {
-    public:
-        bool process_field(titleformat_text_out* p_out, const char* p_name, t_size p_name_length, bool& p_found_flag) override;
-        bool process_function(titleformat_text_out* p_out, const char* p_name, t_size p_name_length, titleformat_hook_function_params* p_params, bool& p_found_flag) override;
-    };
 
     extern cfg_bool ShowMainMenu;
     extern cfg_bool ShowStatusBar;
