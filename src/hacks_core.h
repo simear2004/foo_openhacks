@@ -115,4 +115,5 @@ private:
 
     std::optional<WindowState> mSavedWindowState;
     bool mRequireRevertCursor = false;
+    bool mUsedCompositedStyle = false;
 };
