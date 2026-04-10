@@ -137,7 +137,6 @@ extern cfg_struct_t<WindowStateData> SavedWindowState;
 // runtime vars
 extern uint32_t DPI;
 
-// Path variables
 extern std::string g_fb2k_root;
 extern std::string g_fb2k_profile;
 
@@ -167,6 +166,4 @@ FORCEINLINE void ToggleDisableResizeWhenFullscreen()
 }
 
 void InitialseOpenHacksVars();
-void InjectEnvironmentVariables();
-std::string ResolvePathVariables(const char* input);
 } // namespace OpenHacksVars
