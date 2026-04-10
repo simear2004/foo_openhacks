@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <foobar2000/SDK/titleformat.h>
 #include <string>
 #include "win32_utils.h"
 
@@ -125,6 +126,15 @@ namespace OpenHacksVars
 {
 static const char* kOpenHacksHelpURL = "https://github.com/ttsping/foo_openhacks";
 
+extern std::string g_fb2k_root;
+extern std::string g_fb2k_profile;
+
+class PathVarHook : public titleformat_hook {
+    public:
+        bool process_field(titleformat_text_out* p_out, const char* p_name, t_size p_name_length, bool& p_found_flag) override;
+        bool process_function(titleformat_text_out* p_out, const char* p_name, t_size p_name_length, titleformat_hook_function_params* p_params, bool& p_found_flag) override;
+};
+
 extern cfg_bool ShowMainMenu;
 extern cfg_bool ShowStatusBar;
 extern cfg_int MainWindowFrameStyle;
@@ -136,9 +146,6 @@ extern cfg_struct_t<WindowStateData> SavedWindowState;
 
 // runtime vars
 extern uint32_t DPI;
-
-extern std::string g_fb2k_root;
-extern std::string g_fb2k_profile;
 
 FORCEINLINE void ToggleShowMainMenu()
 {
