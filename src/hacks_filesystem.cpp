@@ -28,7 +28,7 @@ void filesystem_foobar2000::open(service_ptr_t<file>& p_out, const char* p_path,
 {
     std::string expandedPath = ExpandFoobar2000Path(p_path);
     if (expandedPath.empty())
-        throw exception_io_invalid_path();
+        throw foobar2000_io::exception_io_invalid_path();
 
     filesystem::ptr localFS = filesystem::getLocalFS();
     localFS->open(p_out, expandedPath.c_str(), p_mode, p_abort);
@@ -38,7 +38,7 @@ void filesystem_foobar2000::remove(const char* p_path, abort_callback& p_abort)
 {
     std::string expandedPath = ExpandFoobar2000Path(p_path);
     if (expandedPath.empty())
-        throw exception_io_invalid_path();
+        throw foobar2000_io::exception_io_invalid_path();
 
     filesystem::ptr localFS = filesystem::getLocalFS();
     localFS->remove(expandedPath.c_str(), p_abort);
@@ -50,7 +50,7 @@ void filesystem_foobar2000::move(const char* p_src, const char* p_dst, abort_cal
     std::string expandedDst = ExpandFoobar2000Path(p_dst);
     
     if (expandedSrc.empty() || expandedDst.empty())
-        throw exception_io_invalid_path();
+        throw foobar2000_io::exception_io_invalid_path();
 
     filesystem::ptr localFS = filesystem::getLocalFS();
     localFS->move(expandedSrc.c_str(), expandedDst.c_str(), p_abort);
@@ -65,7 +65,7 @@ void filesystem_foobar2000::get_stats(const char* p_path, t_filestats& p_stats, 
 {
     std::string expandedPath = ExpandFoobar2000Path(p_path);
     if (expandedPath.empty())
-        throw exception_io_invalid_path();
+        throw foobar2000_io::exception_io_invalid_path();
 
     filesystem::ptr localFS = filesystem::getLocalFS();
     localFS->get_stats(expandedPath.c_str(), p_stats, p_is_writeable, p_abort);
@@ -75,7 +75,7 @@ void filesystem_foobar2000::create_directory(const char* p_path, abort_callback&
 {
     std::string expandedPath = ExpandFoobar2000Path(p_path);
     if (expandedPath.empty())
-        throw exception_io_invalid_path();
+        throw foobar2000_io::exception_io_invalid_path();
 
     filesystem::ptr localFS = filesystem::getLocalFS();
     localFS->create_directory(expandedPath.c_str(), p_abort);
@@ -85,7 +85,7 @@ void filesystem_foobar2000::list_directory(const char* p_path, directory_callbac
 {
     std::string expandedPath = ExpandFoobar2000Path(p_path);
     if (expandedPath.empty())
-        throw exception_io_invalid_path();
+        throw foobar2000_io::exception_io_invalid_path();
 
     filesystem::ptr localFS = filesystem::getLocalFS();
     localFS->list_directory(expandedPath.c_str(), p_out, p_abort);
