@@ -121,11 +121,6 @@ struct WindowStateData
 };
 #pragma pack(pop)
 
-#include <sdk/foobar2000.h>
-#include <sdk/metadb.h>
-#include <sdk/titleformat.h>
-#include <sdk/filesystem.h>
-
 class custom_path_field_provider : public metadb_display_field_provider {
 public:
     uint32_t get_field_count() override;
