@@ -56,17 +56,14 @@ void InitialseOpenHacksVars()
             }
         }
 
-        // 注入环境变量
         if (!fb2k_root.empty()) {
             SetEnvironmentVariableA("fb2k", fb2k_root.c_str());
             SetEnvironmentVariableA("FB2K", fb2k_root.c_str());
-            OutputDebugStringA(("[OpenHacks] Env 'fb2k' set to: " + fb2k_root + "\n").c_str());
         }
         
         if (!fb2k_profile.empty()) {
             SetEnvironmentVariableA("fb2k_profile", fb2k_profile.c_str());
             SetEnvironmentVariableA("FB2K_PROFILE", fb2k_profile.c_str());
-            OutputDebugStringA(("[OpenHacks] Env 'fb2k_profile' set to: " + fb2k_profile + "\n").c_str());
         }
 
         auto& pseudoCaption = PseudoCaptionSettings.get_value();
@@ -80,9 +77,18 @@ void InitialseOpenHacksVars()
     }
     catch (...) 
     {
-        // 即使出错也不要让 DLL 崩溃，只记录调试信息
         OutputDebugStringA("[OpenHacks] Initialization failed due to an exception.\n");
     }
 }
 
 } // namespace OpenHacksVars
+
+class COpenHacksAutoInit : public init_callback_v2 {
+public:
+    void on_init() override {
+        OpenHacksVars::InitialseOpenHacksVars();
+    }
+    void on_quit() override {}
+};
+
+static service_factory_single_t<COpenHacksAutoInit> g_auto_init_factory;
