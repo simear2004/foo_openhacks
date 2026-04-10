@@ -22,7 +22,7 @@ Requirements:
 4. New: Disable the dragging function of the pseudo title bar area when maximizing or full screen
 5. New: During the process of dragging the scroll bar on the edge of the window, if the mouse leaves the window range, the drag operation will still be performed.
 6. Modification: Adjust the response distance of window size sizing to avoid confusion caused by overlapping with narrow scroll bars.
-7. Fix: White background flickering problem at startup
+7. Fix: White background flickering problem at startup  
 8. Modification: The component is released in Mod version to distinguish it from the original version of ohyeah boss
 
 ### Thanks to:  
@@ -42,7 +42,7 @@ In MSBuild：https://github.com/simear2004/foo_openhacks_mod/actions/
 4、新增：最大化或全屏时禁止伪标题栏区域的拖动功能  
 5、新增：拖动窗口边缘的滚动条过程中，如果鼠标离开窗口范围仍然执行拖动操作  
 6、修改：调整窗口大小 sizing 的响应距离，以免与窄条滚动条重叠导致混乱的情况  
-7、修复：启动时的白色背景闪烁问题
+7、修复：启动时的白色背景闪烁问题  
 8、修改：组件以 Mod 版本发布，以区别 ohyeah 大佬的原版
 
 ### 感谢：  
