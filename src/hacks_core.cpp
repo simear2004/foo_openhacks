@@ -11,9 +11,6 @@ OpenHacksCore& OpenHacksCore::Get()
 
 void OpenHacksCore::Initialize()
 {
-    LONG exStyle = GetWindowLong(window, GWL_EXSTYLE);
-    SetWindowLong(window, GWL_EXSTYLE, exStyle | WS_EX_COMPOSITED);
-    
     // check init errors.
     if (mInitErrors != NoError)
     {
@@ -35,6 +32,9 @@ void OpenHacksCore::Initialize()
 
     if (HWND window = core_api::get_main_window())
     {
+        LONG exStyle = GetWindowLong(window, GWL_EXSTYLE);
+        SetWindowLong(window, GWL_EXSTYLE, exStyle | WS_EX_COMPOSITED);
+        
         // Restore saved window state from persistent storage
         auto& savedWindowData = OpenHacksVars::SavedWindowState.get_value();
         if (savedWindowData.wp.rcNormalPosition.right > savedWindowData.wp.rcNormalPosition.left &&
