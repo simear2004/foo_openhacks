@@ -2,6 +2,7 @@
 #include "hacks_vars.h"
 #include "win32_utils.h"
 #include <windows.h>
+#include <gdiplus.h>
 #include <string>
 #include <vector>
 
@@ -10,7 +11,6 @@ namespace OpenHacksVars
     std::string g_fb2k_root;
     std::string g_fb2k_profile;
     static std::vector<std::wstring> g_loadedFonts;
-    static bool g_fontsLoaded = false;
 
     // {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
     static const GUID cfg_guid_show_main_menu = {0xa1b2c3d4, 0xe5f6, 0x7890, {0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90}};
@@ -41,6 +41,7 @@ namespace OpenHacksVars
     cfg_struct_t<PseudoCaptionParam> PseudoCaptionSettings(cfg_guid_pseudo_caption);
     cfg_struct_t<WindowStateData> SavedWindowState(cfg_guid_saved_window_state);
 
+    // runtime vars
     uint32_t DPI = USER_DEFAULT_SCREEN_DPI;
 
     static void LoadFontsFromDirectory(const std::wstring& fontDir)
@@ -49,7 +50,7 @@ namespace OpenHacksVars
         HANDLE hFind = FindFirstFileW((fontDir + L"\\*.*").c_str(), &findData);
         if (hFind == INVALID_HANDLE_VALUE) return;
 
-        int count = 0;
+        std::vector<std::wstring> newFonts;
         
         do
         {
@@ -67,8 +68,7 @@ namespace OpenHacksVars
                     std::wstring fullPath = fontDir + L"\\" + fileName;
                     if (AddFontResourceW(fullPath.c_str()) > 0)
                     {
-                        g_loadedFonts.push_back(fullPath);
-                        count++;
+                        newFonts.push_back(fullPath);
                     }
                 }
             }
@@ -76,10 +76,26 @@ namespace OpenHacksVars
 
         FindClose(hFind);
         
-        if (count > 0)
+        if (!newFonts.empty())
         {
+            g_loadedFonts.insert(g_loadedFonts.end(), newFonts.begin(), newFonts.end());
+            
             SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, SMTO_ABORTIFHUNG, 5000, nullptr);
-            g_fontsLoaded = true;
+            
+            Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+            ULONG_PTR gdiplusToken;
+            if (Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) == Gdiplus::Ok)
+            {
+                Gdiplus::PrivateFontCollection* pFontCollection = new Gdiplus::PrivateFontCollection();
+                
+                for (const auto& fontPath : newFonts)
+                {
+                    pFontCollection->AddFontFile(fontPath.c_str());
+                }
+                
+                delete pFontCollection;
+                Gdiplus::GdiplusShutdown(gdiplusToken);
+            }
         }
     }
 
@@ -159,7 +175,6 @@ namespace OpenHacksVars
         }
         
         g_loadedFonts.clear();
-        g_fontsLoaded = false;
         SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, SMTO_ABORTIFHUNG, 5000, nullptr);
     }
 
