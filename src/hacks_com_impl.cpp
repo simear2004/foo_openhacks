@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "hacks_com_impl.h"
-
 #include "hacks_core.h"
 #include "hacks_vars.h"
 #include "win32_utils.h"
@@ -343,7 +342,7 @@ STDMETHODIMP OpenHacksCOM::put_AutoLoadFonts(VARIANT_BOOL value)
     if (enabled && !OpenHacksVars::AutoLoadFonts)
     {
         OpenHacksVars::AutoLoadFonts = true;
-        OpenHacksVars::LoadFontsAsync();
+        OpenHacksVars::LoadCustomFonts();
     }
     else if (!enabled && OpenHacksVars::AutoLoadFonts)
     {
