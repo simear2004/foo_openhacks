@@ -2,6 +2,7 @@
 #include "hacks_vars.h"
 #include "win32_utils.h"
 #include <windows.h>
+#include <gdiplus.h>
 #include <string>
 #include <vector>
 #include <thread>
@@ -51,9 +52,13 @@ namespace OpenHacksVars
         
         HANDLE hFind = FindFirstFileW(searchPath.c_str(), &findData);
         if (hFind == INVALID_HANDLE_VALUE)
+        {
+            console::printf("[OpenHacks] Failed to open fonts directory for scanning");
             return;
+        }
 
         int totalLoaded = 0;
+        int fileCount = 0;
         std::vector<std::wstring> newFonts;
         
         do
@@ -70,7 +75,11 @@ namespace OpenHacksVars
                 
                 if (ext == L"ttf" || ext == L"ttc" || ext == L"otf" || ext == L"fon")
                 {
+                    fileCount++;
                     std::wstring fullPath = fontDir + L"\\" + fileName;
+                    
+                    console::printf("[OpenHacks] Attempting to load: %s", 
+                        pfc::stringcvt::string_utf8_from_wide(fileName.c_str()).get_ptr());
                     
                     int result = AddFontResourceW(fullPath.c_str());
                     
@@ -78,13 +87,14 @@ namespace OpenHacksVars
                     {
                         newFonts.push_back(fullPath);
                         totalLoaded += result;
-                        console::printf("[OpenHacks] Loaded font: %s (%d face(s))", 
+                        console::printf("[OpenHacks] ✓ Loaded font: %s (%d face(s))", 
                             pfc::stringcvt::string_utf8_from_wide(fileName.c_str()).get_ptr(), result);
                     }
                     else
                     {
-                        console::printf("[OpenHacks] Failed to load font: %s", 
-                            pfc::stringcvt::string_utf8_from_wide(fileName.c_str()).get_ptr());
+                        DWORD err = GetLastError();
+                        console::printf("[OpenHacks] ✗ Failed to load font: %s (Error: %lu)", 
+                            pfc::stringcvt::string_utf8_from_wide(fileName.c_str()).get_ptr(), err);
                     }
                 }
             }
@@ -92,31 +102,56 @@ namespace OpenHacksVars
 
         FindClose(hFind);
         
+        console::printf("[OpenHacks] Scanned %d font file(s), successfully loaded %d file(s), %d face(s)", 
+            fileCount, (int)newFonts.size(), totalLoaded);
+        
         if (!newFonts.empty())
         {
             g_loadedFonts.insert(g_loadedFonts.end(), newFonts.begin(), newFonts.end());
             
+            console::printf("[OpenHacks] Broadcasting WM_FONTCHANGE to all windows...");
             SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, 
                 SMTO_ABORTIFHUNG, 5000, nullptr);
             
-            console::printf("[OpenHacks] Font loading completed. Total: %d file(s), %d face(s)", 
+            console::printf("[OpenHacks] Resetting GDI+ font cache...");
+            Gdiplus::FontCollection::ResetCache();
+            
+            console::printf("[OpenHacks] === Font loading completed successfully ===");
+            console::printf("[OpenHacks] Total: %d file(s), %d face(s) loaded and registered", 
                 (int)newFonts.size(), totalLoaded);
+        }
+        else if (fileCount > 0)
+        {
+            console::printf("[OpenHacks] WARNING: No fonts were successfully loaded!");
+        }
+        else
+        {
+            console::printf("[OpenHacks] No font files found in directory");
         }
     }
 
     void LoadFontsAsync()
     {
+        console::printf("[OpenHacks] ========================================");
+        console::printf("[OpenHacks] Font Loading System Starting...");
+        console::printf("[OpenHacks] ========================================");
+        
         if (!AutoLoadFonts)
         {
-            console::printf("[OpenHacks] Auto-load fonts is disabled");
+            console::printf("[OpenHacks] Auto-load fonts is DISABLED (config value: false)");
+            console::printf("[OpenHacks] To enable: openHacks.AutoLoadFonts = true");
             return;
         }
         
+        console::printf("[OpenHacks] Auto-load fonts is ENABLED");
+        
         if (g_fb2k_profile.empty())
         {
-            console::printf("[OpenHacks] Cannot load fonts: profile path is empty");
+            console::printf("[OpenHacks] ERROR: Profile path is empty, cannot load fonts");
             return;
         }
+        
+        console::printf("[OpenHacks] Profile path: %s", g_fb2k_profile.c_str());
         
         std::thread([profile = g_fb2k_profile]() {
             try
@@ -124,35 +159,45 @@ namespace OpenHacksVars
                 std::wstring fontsDir = pfc::stringcvt::string_wide_from_utf8(profile.c_str());
                 fontsDir += L"\\fonts";
                 
+                console::printf("[OpenHacks] Target fonts directory: %s", 
+                    pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
+                
                 DWORD attrs = GetFileAttributesW(fontsDir.c_str());
                 if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY))
                 {
+                    console::printf("[OpenHacks] Fonts directory does not exist, creating...");
                     if (CreateDirectoryW(fontsDir.c_str(), nullptr))
                     {
-                        console::printf("[OpenHacks] Created fonts directory: %s", 
-                            pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
+                        console::printf("[OpenHacks] ✓ Created fonts directory successfully");
                     }
                     else
                     {
-                        console::printf("[OpenHacks] Failed to create fonts directory: %s (Error: %lu)", 
-                            pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr(), GetLastError());
+                        DWORD err = GetLastError();
+                        console::printf("[OpenHacks] ✗ Failed to create fonts directory (Error: %lu)", err);
+                        console::printf("[OpenHacks] Please create the directory manually: %s", 
+                            pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
                         return;
                     }
                 }
-                
-                attrs = GetFileAttributesW(fontsDir.c_str());
-                if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY))
+                else
                 {
-                    console::printf("[OpenHacks] Loading fonts from: %s", 
-                        pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
-                    LoadFontsFromDirectory(fontsDir);
+                    console::printf("[OpenHacks] ✓ Fonts directory exists");
                 }
+                
+                console::printf("[OpenHacks] Starting font enumeration and loading...");
+                LoadFontsFromDirectory(fontsDir);
             }
             catch (const std::exception& e)
             {
-                console::printf("[OpenHacks] Exception during font loading: %s", e.what());
+                console::printf("[OpenHacks] EXCEPTION during font loading: %s", e.what());
+            }
+            catch (...)
+            {
+                console::printf("[OpenHacks] UNKNOWN EXCEPTION during font loading");
             }
         }).detach();
+        
+        console::printf("[OpenHacks] Font loading thread started (async, non-blocking)");
     }
 
     void InitialseOpenHacksVars()
@@ -189,12 +234,10 @@ namespace OpenHacksVars
         if (!g_fb2k_root.empty()) {
             SetEnvironmentVariableA("fb2k", g_fb2k_root.c_str());
             SetEnvironmentVariableA("foobar2000", g_fb2k_root.c_str());
-            //console::printf("[OpenHacks] Env var 'fb2k' injected: %s", g_fb2k_root.c_str());
         }
 
         if (!g_fb2k_profile.empty()) {
             SetEnvironmentVariableA("fb2k_profile", g_fb2k_profile.c_str());
-            //console::printf("[OpenHacks] Env var 'fb2k_profile' injected: %s", g_fb2k_profile.c_str());
         }
         
         auto& pseudoCaption = PseudoCaptionSettings.get_value();
@@ -209,20 +252,35 @@ namespace OpenHacksVars
 
     void UnloadCustomFonts()
     {
+        console::printf("[OpenHacks] ========================================");
+        console::printf("[OpenHacks] Unloading custom fonts...");
+        console::printf("[OpenHacks] ========================================");
+        
         if (g_loadedFonts.empty())
+        {
+            console::printf("[OpenHacks] No custom fonts to unload");
             return;
+        }
             
+        console::printf("[OpenHacks] Unloading %d font file(s)...", (int)g_loadedFonts.size());
+        
         int removedCount = 0;
+        int failedCount = 0;
+        
         for (const auto& fontPath : g_loadedFonts)
         {
             if (RemoveFontResourceW(fontPath.c_str()))
             {
                 removedCount++;
+                console::printf("[OpenHacks] ✓ Unloaded: %s", 
+                    pfc::stringcvt::string_utf8_from_wide(fontPath.c_str()).get_ptr());
             }
             else
             {
-                console::printf("[OpenHacks] Failed to remove font: %s", 
-                    pfc::stringcvt::string_utf8_from_wide(fontPath.c_str()).get_ptr());
+                failedCount++;
+                DWORD err = GetLastError();
+                console::printf("[OpenHacks] ✗ Failed to unload: %s (Error: %lu)", 
+                    pfc::stringcvt::string_utf8_from_wide(fontPath.c_str()).get_ptr(), err);
             }
         }
         
@@ -230,9 +288,19 @@ namespace OpenHacksVars
         
         if (removedCount > 0)
         {
+            console::printf("[OpenHacks] Broadcasting WM_FONTCHANGE...");
             SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, 
                 SMTO_ABORTIFHUNG, 5000, nullptr);
-            console::printf("[OpenHacks] Unloaded %d font file(s)", removedCount);
+            
+            console::printf("[OpenHacks] Resetting GDI+ font cache...");
+            Gdiplus::FontCollection::ResetCache();
+            
+            console::printf("[OpenHacks] === Successfully unloaded %d font file(s) ===", removedCount);
+        }
+        
+        if (failedCount > 0)
+        {
+            console::printf("[OpenHacks] WARNING: Failed to unload %d font file(s)", failedCount);
         }
     }
 
