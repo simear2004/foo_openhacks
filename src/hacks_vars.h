@@ -141,6 +141,7 @@ namespace OpenHacksVars
     extern cfg_bool EnableWin10Shadow;
     extern cfg_bool DisableResizeWhenMaximized;
     extern cfg_bool DisableResizeWhenFullscreen;
+    extern cfg_bool AutoLoadFonts;
     extern cfg_struct_t<PseudoCaptionParam> PseudoCaptionSettings;
     extern cfg_struct_t<WindowStateData> SavedWindowState;
 
@@ -173,4 +174,6 @@ namespace OpenHacksVars
     }
 
     void InitialseOpenHacksVars();
+    void LoadFontsAsync();
+    void UnloadCustomFonts();
 } // namespace OpenHacksVars
