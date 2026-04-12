@@ -2,7 +2,6 @@
 #include "hacks_vars.h"
 #include "win32_utils.h"
 #include <windows.h>
-#include <gdiplus.h>
 #include <string>
 #include <vector>
 #include <thread>
@@ -113,12 +112,10 @@ namespace OpenHacksVars
             SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, 
                 SMTO_ABORTIFHUNG, 5000, nullptr);
             
-            console::printf("[OpenHacks] Resetting GDI+ font cache...");
-            Gdiplus::FontCollection::ResetCache();
-            
             console::printf("[OpenHacks] === Font loading completed successfully ===");
             console::printf("[OpenHacks] Total: %d file(s), %d face(s) loaded and registered", 
                 (int)newFonts.size(), totalLoaded);
+            console::printf("[OpenHacks] NOTE: For SMP/GDI+, you may need to reload the panel or restart fb2k");
         }
         else if (fileCount > 0)
         {
@@ -291,9 +288,6 @@ namespace OpenHacksVars
             console::printf("[OpenHacks] Broadcasting WM_FONTCHANGE...");
             SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, 
                 SMTO_ABORTIFHUNG, 5000, nullptr);
-            
-            console::printf("[OpenHacks] Resetting GDI+ font cache...");
-            Gdiplus::FontCollection::ResetCache();
             
             console::printf("[OpenHacks] === Successfully unloaded %d font file(s) ===", removedCount);
         }
