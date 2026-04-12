@@ -47,9 +47,9 @@ namespace OpenHacksVars
     static void LoadFontsFromDirectory(const std::wstring& fontDir)
     {
         WIN32_FIND_DATAW findData;
-        HANDLE hFind = FindFirstFileW((fontDir + L"\\*.*").c_str(), &findData);
+        std::wstring searchPath = fontDir + L"\\*.*";
+        HANDLE hFind = FindFirstFileW(searchPath.c_str(), &findData);
         if (hFind == INVALID_HANDLE_VALUE) return;
-
         std::vector<std::wstring> newFonts;
         
         do
@@ -58,15 +58,18 @@ namespace OpenHacksVars
             {
                 std::wstring fileName = findData.cFileName;
                 size_t dotPos = fileName.find_last_of(L'.');
-                if (dotPos == std::wstring::npos || dotPos == fileName.size() - 1) continue;
-                
+                if (dotPos == std::wstring::npos)
+                    continue;
+                    
                 std::wstring ext = fileName.substr(dotPos + 1);
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::towlower);
                 
                 if (ext == L"ttf" || ext == L"ttc" || ext == L"otf" || ext == L"fon")
                 {
                     std::wstring fullPath = fontDir + L"\\" + fileName;
-                    if (AddFontResourceW(fullPath.c_str()) > 0)
+                    int result = AddFontResourceW(fullPath.c_str());
+                    
+                    if (result > 0)
                     {
                         newFonts.push_back(fullPath);
                     }
@@ -79,18 +82,19 @@ namespace OpenHacksVars
         if (!newFonts.empty())
         {
             g_loadedFonts.insert(g_loadedFonts.end(), newFonts.begin(), newFonts.end());
-            
             SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, SMTO_ABORTIFHUNG, 5000, nullptr);
             
             Gdiplus::GdiplusStartupInput gdiplusStartupInput;
             ULONG_PTR gdiplusToken;
-            if (Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) == Gdiplus::Ok)
+            Gdiplus::Status status = Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+            
+            if (status == Gdiplus::Ok)
             {
                 Gdiplus::PrivateFontCollection* pFontCollection = new Gdiplus::PrivateFontCollection();
                 
                 for (const auto& fontPath : newFonts)
                 {
-                    pFontCollection->AddFontFile(fontPath.c_str());
+                    Gdiplus::Status addStatus = pFontCollection->AddFontFile(fontPath.c_str());
                 }
                 
                 delete pFontCollection;
@@ -101,7 +105,8 @@ namespace OpenHacksVars
 
     void LoadCustomFonts()
     {
-        if (!AutoLoadFonts || g_fb2k_profile.empty()) return;
+        if (!AutoLoadFonts)  return;
+        if (g_fb2k_profile.empty()) return;
         
         std::wstring fontsDir = pfc::stringcvt::string_wide_from_utf8(g_fb2k_profile.c_str());
         fontsDir += L"\\fonts";
@@ -109,7 +114,10 @@ namespace OpenHacksVars
         DWORD attrs = GetFileAttributesW(fontsDir.c_str());
         if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY))
         {
-            CreateDirectoryW(fontsDir.c_str(), nullptr);
+            if (!CreateDirectoryW(fontsDir.c_str(), nullptr))
+            {
+                return;
+            }
         }
         
         LoadFontsFromDirectory(fontsDir);
