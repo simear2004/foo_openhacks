@@ -5,12 +5,15 @@
 #include <gdiplus.h>
 #include <string>
 #include <vector>
+#include <thread>
+#include <atomic>
 
 namespace OpenHacksVars
 {
     std::string g_fb2k_root;
     std::string g_fb2k_profile;
     static std::vector<std::wstring> g_loadedFonts;
+    static std::atomic<bool> g_fontsLoaded{false};
 
     // {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
     static const GUID cfg_guid_show_main_menu = {0xa1b2c3d4, 0xe5f6, 0x7890, {0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90}};
@@ -147,6 +150,8 @@ namespace OpenHacksVars
                 console::printf("[OpenHacks] WARNING: Failed to initialize GDI+ (Status: %d)", status);
             }
             
+            g_fontsLoaded.store(true);
+            
             console::printf("[OpenHacks] === Font loading completed: %d file(s), %d face(s) ===", 
                 (int)newFonts.size(), totalLoaded);
         }
@@ -183,36 +188,56 @@ namespace OpenHacksVars
         
         console::printf("[OpenHacks] Profile path: %s", g_fb2k_profile.c_str());
         
-        std::wstring fontsDir = pfc::stringcvt::string_wide_from_utf8(g_fb2k_profile.c_str());
-        fontsDir += L"\\fonts";
-        
-        console::printf("[OpenHacks] Target fonts directory: %s", 
-            pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
-        
-        DWORD attrs = GetFileAttributesW(fontsDir.c_str());
-        if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY))
-        {
-            console::printf("[OpenHacks] Fonts directory does not exist, creating...");
-            if (CreateDirectoryW(fontsDir.c_str(), nullptr))
+        std::thread([profile = g_fb2k_profile]() {
+            try
             {
-                console::printf("[OpenHacks] ✓ Created fonts directory successfully");
-            }
-            else
-            {
-                DWORD err = GetLastError();
-                console::printf("[OpenHacks] ✗ Failed to create fonts directory (Error: %lu)", err);
-                console::printf("[OpenHacks] Please create the directory manually: %s", 
+                std::wstring fontsDir = pfc::stringcvt::string_wide_from_utf8(profile.c_str());
+                fontsDir += L"\\fonts";
+                
+                console::printf("[OpenHacks] Target fonts directory: %s", 
                     pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
-                return;
+                
+                DWORD attrs = GetFileAttributesW(fontsDir.c_str());
+                if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY))
+                {
+                    console::printf("[OpenHacks] Fonts directory does not exist, creating...");
+                    if (CreateDirectoryW(fontsDir.c_str(), nullptr))
+                    {
+                        console::printf("[OpenHacks] ✓ Created fonts directory successfully");
+                    }
+                    else
+                    {
+                        DWORD err = GetLastError();
+                        console::printf("[OpenHacks] ✗ Failed to create fonts directory (Error: %lu)", err);
+                        console::printf("[OpenHacks] Please create the directory manually: %s", 
+                            pfc::stringcvt::string_utf8_from_wide(fontsDir.c_str()).get_ptr());
+                        return;
+                    }
+                }
+                else
+                {
+                    console::printf("[OpenHacks] ✓ Fonts directory exists");
+                }
+                
+                console::printf("[OpenHacks] Starting font enumeration and loading...");
+                LoadFontsFromDirectory(fontsDir);
             }
-        }
-        else
-        {
-            console::printf("[OpenHacks] ✓ Fonts directory exists");
-        }
+            catch (const std::exception& e)
+            {
+                console::printf("[OpenHacks] EXCEPTION during font loading: %s", e.what());
+            }
+            catch (...)
+            {
+                console::printf("[OpenHacks] UNKNOWN EXCEPTION during font loading");
+            }
+        }).detach();
         
-        console::printf("[OpenHacks] Starting font enumeration and loading...");
-        LoadFontsFromDirectory(fontsDir);
+        console::printf("[OpenHacks] Font loading thread started (async, non-blocking)");
+    }
+
+    bool AreFontsLoaded()
+    {
+        return g_fontsLoaded.load();
     }
 
     void InitialseOpenHacksVars()
@@ -270,6 +295,8 @@ namespace OpenHacksVars
         console::printf("[OpenHacks] ========================================");
         console::printf("[OpenHacks] Unloading custom fonts");
         console::printf("[OpenHacks] ========================================");
+        
+        g_fontsLoaded.store(false);
         
         if (g_loadedFonts.empty())
         {
