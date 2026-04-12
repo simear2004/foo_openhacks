@@ -21,6 +21,12 @@ public:
 
             if (!OpenHacksCore::Get().InstallWindowHooks())
                 return;
+            
+            if (OpenHacksVars::AutoLoadFonts)
+            {
+                console::printf("[OpenHacks] Loading fonts before UI initialization...");
+                OpenHacksVars::LoadFontsAsync();
+            }
         }
     }
 };
@@ -28,21 +34,14 @@ public:
 class open_hacks_initquit : public initquit
 {
 public:
-    // on_init is called after the main window has been created.
     void on_init() override
     {
         OpenHacksCore::Get().Initialize();
-
-        if (OpenHacksVars::AutoLoadFonts)
-        {
-            OpenHacksVars::LoadFontsAsync();
-        }
     }
-    // on_quit is called before the main window is destroyed.
+    
     void on_quit() override
     {
         OpenHacksVars::UnloadCustomFonts();
-        // safe to clean up
         OpenHacksCore::Get().Finalize();
     }
 };
