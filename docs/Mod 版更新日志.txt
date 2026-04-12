@@ -1,3 +1,8 @@
+v0.1.5.3 (2026041201)
+新增：从profile\fonts加载字体的功能
+新增：1个API接口，默认为false：
+AutoLoadFonts = true; //是否从profile\fonts文件夹中加载字体
+
 v0.1.5.2 (2026041101)
 新增：3个全局变量（感谢 ohyeah 支持）
 %fb2k%                  //返回 foobar2000 安装文件夹
