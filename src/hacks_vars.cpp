@@ -2,17 +2,12 @@
 #include "hacks_vars.h"
 #include "win32_utils.h"
 #include <windows.h>
-#include <gdiplus.h>
 #include <string>
-#include <vector>
-#include <algorithm>
 
 namespace OpenHacksVars
 {
     std::string g_fb2k_root;
     std::string g_fb2k_profile;
-    static std::vector<std::wstring> g_loadedFonts;
-    static Gdiplus::PrivateFontCollection* g_pGlobalFontCache = nullptr;
 
     // {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
     static const GUID cfg_guid_show_main_menu = {0xa1b2c3d4, 0xe5f6, 0x7890, {0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78, 0x90}};
@@ -30,8 +25,6 @@ namespace OpenHacksVars
     static const GUID cfg_guid_pseudo_caption = {0xa7b8c9d0, 0xe1f2, 0x3456, {0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56}};
     // {B8C9D0E1-F2A3-4567-2345-678901234567}
     static const GUID cfg_guid_saved_window_state = {0xb8c9d0e1, 0xf2a3, 0x4567, {0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45, 0x67}};
-    // {C9D0E1F2-A3B4-5678-3456-789012345678}
-    static const GUID cfg_guid_auto_load_fonts = {0xc9d0e1f2, 0xa3b4, 0x5678, {0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78}};
 
     cfg_bool ShowMainMenu(cfg_guid_show_main_menu, true);
     cfg_bool ShowStatusBar(cfg_guid_show_status_bar, true);
@@ -39,123 +32,11 @@ namespace OpenHacksVars
     cfg_bool EnableWin10Shadow(cfg_guid_enable_win10_shadow, true);
     cfg_bool DisableResizeWhenMaximized(cfg_guid_disable_resize_maximized, true);
     cfg_bool DisableResizeWhenFullscreen(cfg_guid_disable_resize_fullscreen, true);
-    cfg_bool AutoLoadFonts(cfg_guid_auto_load_fonts, true);
     cfg_struct_t<PseudoCaptionParam> PseudoCaptionSettings(cfg_guid_pseudo_caption);
     cfg_struct_t<WindowStateData> SavedWindowState(cfg_guid_saved_window_state);
 
     // runtime vars
     uint32_t DPI = USER_DEFAULT_SCREEN_DPI;
-
-    static int CALLBACK RefreshFontCacheProc(const ENUMLOGFONTEXW* lpelfe, const NEWTEXTMETRICEXW* lpntme, DWORD FontType, LPARAM lParam)
-    {
-        return 1;
-    }
-
-    static void LoadFontsFromDirectory(const std::wstring& fontDir)
-    {
-        WIN32_FIND_DATAW findData;
-        std::wstring searchPath = fontDir + L"\\*.*";
-        
-        HANDLE hFind = FindFirstFileW(searchPath.c_str(), &findData);
-        if (hFind == INVALID_HANDLE_VALUE) return;
-
-        std::vector<std::wstring> newFonts;
-        
-        do
-        {
-            if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-            {
-                std::wstring fileName = findData.cFileName;
-                size_t dotPos = fileName.find_last_of(L'.');
-                if (dotPos == std::wstring::npos || dotPos == fileName.size() - 1) continue;
-                
-                std::wstring ext = fileName.substr(dotPos + 1);
-                std::transform(ext.begin(), ext.end(), ext.begin(), ::towlower);
-                
-                if (ext == L"ttf" || ext == L"ttc" || ext == L"otf")
-                {
-                    std::wstring fullPath = fontDir + L"\\" + fileName;
-                    if (std::find(g_loadedFonts.begin(), g_loadedFonts.end(), fullPath) == g_loadedFonts.end())
-                    {
-                        if (AddFontResourceW(fullPath.c_str()) > 0)
-                        {
-                            newFonts.push_back(fullPath);
-                        }
-                    }
-                }
-            }
-        } while (FindNextFileW(hFind, &findData));
-        FindClose(hFind);
-        
-        if (!newFonts.empty())
-        {
-            g_loadedFonts.insert(g_loadedFonts.end(), newFonts.begin(), newFonts.end());
-            
-            SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, SMTO_ABORTIFHUNG, 5000, nullptr);
-            
-            HDC hdc = GetDC(nullptr);
-            if (hdc)
-            {
-                LOGFONTW lf = {0};
-                lf.lfCharSet = DEFAULT_CHARSET;
-                EnumFontFamiliesExW(hdc, &lf, (FONTENUMPROCW)RefreshFontCacheProc, 0, 0);
-                ReleaseDC(nullptr, hdc);
-            }
-
-            if (!g_pGlobalFontCache)
-            {
-                g_pGlobalFontCache = new Gdiplus::PrivateFontCollection();
-            }
-
-            for (const auto& path : newFonts)
-            {
-                g_pGlobalFontCache->AddFontFile(path.c_str());
-            }
-
-            int count = g_pGlobalFontCache->GetFamilyCount();
-            if (count > 0)
-            {
-                std::vector<Gdiplus::FontFamily> families(count);
-                int found = 0;
-                g_pGlobalFontCache->GetFamilies(count, &families[0], &found);
-                
-                for (int i = 0; i < found; i++)
-                {
-                    WCHAR name[LF_FACESIZE];
-                    families[i].GetFamilyName(name);
-                    
-                    Gdiplus::Font* pFont = new Gdiplus::Font(&families[i], 10.0f, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
-                    if (pFont)
-                    {
-                        pFont->IsAvailable();
-                        delete pFont;
-                    }
-                }
-            }
-            
-            Sleep(50);
-        }
-    }
-
-    void LoadCustomFonts()
-    {
-        if (!AutoLoadFonts)  return;
-        if (g_fb2k_profile.empty()) return;
-        
-        std::wstring fontsDir = pfc::stringcvt::string_wide_from_utf8(g_fb2k_profile.c_str());
-        fontsDir += L"\\fonts";
-        
-        DWORD attrs = GetFileAttributesW(fontsDir.c_str());
-        if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY))
-        {
-            if (!CreateDirectoryW(fontsDir.c_str(), nullptr))
-            {
-                return;
-            }
-        }
-        
-        LoadFontsFromDirectory(fontsDir);
-    }
 
     void InitialseOpenHacksVars()
     {
@@ -191,10 +72,12 @@ namespace OpenHacksVars
         if (!g_fb2k_root.empty()) {
             SetEnvironmentVariableA("fb2k", g_fb2k_root.c_str());
             SetEnvironmentVariableA("foobar2000", g_fb2k_root.c_str());
+            //console::printf("[OpenHacks] Env var 'fb2k' injected: %s", g_fb2k_root.c_str());
         }
 
         if (!g_fb2k_profile.empty()) {
             SetEnvironmentVariableA("fb2k_profile", g_fb2k_profile.c_str());
+            //console::printf("[OpenHacks] Env var 'fb2k_profile' injected: %s", g_fb2k_profile.c_str());
         }
         
         auto& pseudoCaption = PseudoCaptionSettings.get_value();
@@ -205,25 +88,6 @@ namespace OpenHacksVars
             height += Utility::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, Utility::GetDPI(HWND_DESKTOP));
             pseudoCaption.height = height;
         }
-    }
-
-    void UnloadCustomFonts()
-    {
-        if (g_loadedFonts.empty()) return;
-        
-        for (const auto& fontPath : g_loadedFonts)
-        {
-            RemoveFontResourceW(fontPath.c_str());
-        }
-        
-        if (g_pGlobalFontCache)
-        {
-            delete g_pGlobalFontCache;
-            g_pGlobalFontCache = nullptr;
-        }
-        
-        g_loadedFonts.clear();
-        SendMessageTimeoutW(HWND_BROADCAST, WM_FONTCHANGE, 0, 0, SMTO_ABORTIFHUNG, 5000, nullptr);
     }
 
 } // namespace OpenHacksVars
@@ -269,6 +133,7 @@ bool custom_path_field_provider::process_field(uint32_t index, metadb_handle* ha
     }
 
     if (path_str) {
+        //console::formatter() << "[OpenHacks Debug] %" << kDisplayFields[index].name << "% resolved to: " << path_str << "\n";
         out->write(titleformat_inputtypes::unknown, path_str, strlen(path_str));
         return true;
     }
