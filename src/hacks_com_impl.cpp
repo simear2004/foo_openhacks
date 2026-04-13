@@ -327,28 +327,3 @@ STDMETHODIMP OpenHacksCOM::put_DisableResizeWhenFullscreen(VARIANT_BOOL value)
     OpenHacksVars::DisableResizeWhenFullscreen = TO_BOOLEAN(value);
     return S_OK;
 }
-
-STDMETHODIMP OpenHacksCOM::get_AutoLoadFonts(VARIANT_BOOL* pValue)
-{
-    RETURN_HR_IF(pValue == nullptr, E_POINTER);
-    *pValue = TO_VARIANT_BOOL(OpenHacksVars::AutoLoadFonts);
-    return S_OK;
-}
-
-STDMETHODIMP OpenHacksCOM::put_AutoLoadFonts(VARIANT_BOOL value)
-{
-    const bool enabled = TO_BOOLEAN(value);
-    
-    if (enabled && !OpenHacksVars::AutoLoadFonts)
-    {
-        OpenHacksVars::AutoLoadFonts = true;
-        OpenHacksVars::LoadCustomFonts();
-    }
-    else if (!enabled && OpenHacksVars::AutoLoadFonts)
-    {
-        OpenHacksVars::AutoLoadFonts = false;
-        OpenHacksVars::UnloadCustomFonts();
-    }
-    
-    return S_OK;
-}
