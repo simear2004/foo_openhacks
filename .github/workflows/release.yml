@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g., v0.1.5.0)'
+        required: true
+        default: 'v0.1.5.0'
 
 env:
   SOLUTION_FILE_PATH: .
