@@ -154,6 +154,9 @@ LRESULT OpenHacksCore::OpenHacksMainWindowProc(HWND wnd, UINT msg, WPARAM wp, LP
 {
     switch (msg)
     {
+    case WM_ERASEBKGND:
+        return 1;
+        
     case WM_SYSCOMMAND:
         if (OnSysCommand(wnd, wp, lp))
             return 0;
