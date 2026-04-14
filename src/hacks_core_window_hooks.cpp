@@ -82,6 +82,20 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
         const auto pcwps = reinterpret_cast<PCWPSTRUCT>(lp);
         switch (pcwps->message)
         {
+        case WM_NCCREATE:
+        {
+            if (mMainWindow == nullptr)
+            {
+                wchar_t className[MAX_PATH] = {};
+                GetClassNameW(pcwps->hwnd, className, ARRAYSIZE(className));
+                if (className == kDUIMainWindowClassName)
+                {
+                    SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)GetStockObject(NULL_BRUSH));
+                }
+            }
+            break;
+        }
+
         case WM_CREATE:
         {
             if (mMainWindow == nullptr)
@@ -91,18 +105,35 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 if (className == kDUIMainWindowClassName)
                 {
                     mMainWindow = pcwps->hwnd;
-                    SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)GetStockObject(NULL_BRUSH));
+                    
                     LONG exStyle = GetWindowLong(pcwps->hwnd, GWL_EXSTYLE);
-                    SetWindowLong(pcwps->hwnd, GWL_EXSTYLE, exStyle | WS_EX_COMPOSITED);
+                    SetWindowLong(pcwps->hwnd, GWL_EXSTYLE, exStyle | WS_EX_COMPOSITED | WS_EX_LAYERED);
+                    SetLayeredWindowAttributes(pcwps->hwnd, 0, 0, LWA_ALPHA);
                     mUsedCompositedStyle = true;
                     
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
-                    InvalidateRect(mMainWindow, NULL, TRUE);
-                    UpdateWindow(mMainWindow);
+                    
+                    SetTimer(pcwps->hwnd, 1, 50, nullptr);
                 }
             }
 
+            break;
+        }
+
+        case WM_TIMER:
+        {
+            if (pcwps->hwnd == mMainWindow && pcwps->wParam == 1)
+            {
+                KillTimer(pcwps->hwnd, 1);
+                
+                LONG exStyle = GetWindowLong(pcwps->hwnd, GWL_EXSTYLE);
+                SetWindowLong(pcwps->hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_LAYERED);
+                SetLayeredWindowAttributes(pcwps->hwnd, 0, 255, LWA_ALPHA);
+                
+                InvalidateRect(pcwps->hwnd, NULL, TRUE);
+                UpdateWindow(pcwps->hwnd);
+            }
             break;
         }
 
@@ -113,7 +144,6 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
 
     return CallNextHookEx(mCallWndHook, code, wp, lp);
 }
-
 LRESULT OpenHacksCore::OpenHacksGetMessageProc(int code, WPARAM wp, LPARAM lp)
 {
     if (code >= HC_ACTION && (UINT)wp == PM_REMOVE)
