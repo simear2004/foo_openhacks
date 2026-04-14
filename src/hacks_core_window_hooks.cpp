@@ -114,7 +114,7 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                     mMainWindowOriginProc = (WNDPROC)SetWindowLongPtr(pcwps->hwnd, GWLP_WNDPROC, (LONG_PTR)StaticOpenHacksMainWindowProc);
                     OpenHacksVars::DPI = Utility::GetDPI(mMainMenuWindow);
                     
-                    SetTimer(pcwps->hwnd, 1, 50, nullptr);
+                    SetTimer(pcwps->hwnd, 1, 5000, nullptr);
                 }
             }
 
