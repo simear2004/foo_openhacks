@@ -91,7 +91,7 @@ LRESULT OpenHacksCore::OpenHacksCallWndProc(int code, WPARAM wp, LPARAM lp)
                 if (className == kDUIMainWindowClassName)
                 {
                     mMainWindow = pcwps->hwnd;
-                    
+                    SetClassLongPtr(pcwps->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)GetStockObject(NULL_BRUSH));
                     LONG exStyle = GetWindowLong(pcwps->hwnd, GWL_EXSTYLE);
                     SetWindowLong(pcwps->hwnd, GWL_EXSTYLE, exStyle | WS_EX_COMPOSITED);
                     mUsedCompositedStyle = true;
