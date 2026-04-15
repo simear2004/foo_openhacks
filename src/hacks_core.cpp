@@ -273,11 +273,59 @@ void OpenHacksCore::ExitFullscreen()
     if (mSavedWindowState.has_value())
     {
         auto savedState = mSavedWindowState.value();
+        bool hadCaption = (savedState.style & WS_CAPTION) != 0;
         
+        // Exit fullscreen - restore style and position
         Utility::ExitFullscreen(mainWindow, savedState);
         
-        mSavedWindowState->fullscreen = false;
-        OpenHacksVars::SavedWindowState.get_value().FromWindowState(mSavedWindowState.value());
+        // For custom styles (NoCaption/NoBorder), check if we need to re-maximize
+        if (!hadCaption)
+        {
+            // After ExitFullscreen, the window might be in an inconsistent state
+            // We need to check if it should be maximized
+            
+            RECT windowRect, workArea;
+            GetWindowRect(mainWindow, &windowRect);
+            
+            HMONITOR monitor = MonitorFromWindow(mainWindow, MONITOR_DEFAULTTONEAREST);
+            if (monitor)
+            {
+                MONITORINFO mi = { sizeof(MONITORINFO) };
+                if (GetMonitorInfo(monitor, &mi))
+                {
+                    workArea = mi.rcWork;
+                    
+                    // Check if window size matches work area (was maximized)
+                    bool wasMaximized = (windowRect.left == workArea.left &&
+                                        windowRect.top == workArea.top &&
+                                        windowRect.right == workArea.right &&
+                                        windowRect.bottom == workArea.bottom);
+                    
+                    if (wasMaximized)
+                    {
+                        // Window exited to a maximized-like state but it's not proper
+                        // We need to properly set up the maximize state
+                        
+                        // First, restore to a normal state using saved rcNormalPosition
+                        // But we need to make sure the style is correct
+                        SetWindowLongPtr(mainWindow, GWL_STYLE, savedState.style);
+                        EnableWindowShadow(mainWindow, true);
+                        
+                        WINDOWPLACEMENT wp = savedState.wp;
+                        wp.showCmd = SW_SHOWNORMAL;
+                        SetWindowPlacement(mainWindow, &wp);
+                        
+                        // Now properly maximize, which will save the correct restore point
+                        Maximize();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // For standard style or non-maximized, clear the state
+        mSavedWindowState.reset();
+        OpenHacksVars::SavedWindowState.get_value() = WindowStateData();
     }
     else
     {
