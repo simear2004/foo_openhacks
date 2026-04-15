@@ -15,7 +15,6 @@ struct WindowState
     bool fullscreen = false;
     DWORD style = 0;
     WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
-    bool wasCustomMaximized = false;
 };
 
 namespace Utility
