@@ -251,20 +251,18 @@ void OpenHacksCore::EnterFullscreen()
 {
     HWND mainWindow = core_api::get_main_window();
     
-    bool stateExisted = mSavedWindowState.has_value();
-    auto& state = mSavedWindowState.emplace();
-    
-    if (!stateExisted)
+    if (!mSavedWindowState.has_value())
     {
+        auto& state = mSavedWindowState.emplace();
         state.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
         GetWindowPlacement(mainWindow, &state.wp);
     }
     
-    state.fullscreen = true;
+    mSavedWindowState->fullscreen = true;
 
     Utility::EnterFullscreen(mainWindow, mSavedWindowState.value());
 
-    OpenHacksVars::SavedWindowState.get_value().FromWindowState(state);
+    OpenHacksVars::SavedWindowState.get_value().FromWindowState(mSavedWindowState.value());
 }
 
 void OpenHacksCore::ExitFullscreen()
