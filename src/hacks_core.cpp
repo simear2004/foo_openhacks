@@ -251,40 +251,16 @@ void OpenHacksCore::EnterFullscreen()
 {
     HWND mainWindow = core_api::get_main_window();
     
-    // Check if window is in custom maximized state (NoCaption/NoBorder style and fills work area)
-    bool isCustomMaximized = false;
-    DWORD currentStyle = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
-    bool hasCaption = (currentStyle & WS_CAPTION) != 0;
+    bool stateExisted = mSavedWindowState.has_value();
+    auto& state = mSavedWindowState.emplace();
     
-    if (!hasCaption)
+    if (!stateExisted)
     {
-        RECT windowRect, workArea;
-        GetWindowRect(mainWindow, &windowRect);
-        
-        HMONITOR monitor = MonitorFromWindow(mainWindow, MONITOR_DEFAULTTONEAREST);
-        if (monitor)
-        {
-            MONITORINFO mi = { sizeof(MONITORINFO) };
-            if (GetMonitorInfo(monitor, &mi))
-            {
-                workArea = mi.rcWork;
-                
-                if (windowRect.left == workArea.left &&
-                    windowRect.top == workArea.top &&
-                    windowRect.right == workArea.right &&
-                    windowRect.bottom == workArea.bottom)
-                {
-                    isCustomMaximized = true;
-                }
-            }
-        }
+        state.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
+        GetWindowPlacement(mainWindow, &state.wp);
     }
     
-    auto& state = mSavedWindowState.emplace();
     state.fullscreen = true;
-    state.style = currentStyle;
-    state.wasCustomMaximized = isCustomMaximized;
-    GetWindowPlacement(mainWindow, &state.wp);
 
     Utility::EnterFullscreen(mainWindow, mSavedWindowState.value());
 
@@ -298,16 +274,34 @@ void OpenHacksCore::ExitFullscreen()
     {
         auto savedState = mSavedWindowState.value();
         bool hadCaption = (savedState.style & WS_CAPTION) != 0;
-        bool wasCustomMaximized = savedState.wasCustomMaximized;
         
         Utility::ExitFullscreen(mainWindow, savedState);
         
         mSavedWindowState.reset();
         OpenHacksVars::SavedWindowState.get_value() = WindowStateData();
         
-        if (!hadCaption && wasCustomMaximized)
+        if (!hadCaption)
         {
-            Maximize();
+            RECT windowRect, workArea;
+            GetWindowRect(mainWindow, &windowRect);
+            
+            HMONITOR monitor = MonitorFromWindow(mainWindow, MONITOR_DEFAULTTONEAREST);
+            if (monitor)
+            {
+                MONITORINFO mi = { sizeof(MONITORINFO) };
+                if (GetMonitorInfo(monitor, &mi))
+                {
+                    workArea = mi.rcWork;
+                    
+                    if (windowRect.left == workArea.left &&
+                        windowRect.top == workArea.top &&
+                        windowRect.right == workArea.right &&
+                        windowRect.bottom == workArea.bottom)
+                    {
+                        Maximize();
+                    }
+                }
+            }
         }
     }
     else
