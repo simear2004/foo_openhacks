@@ -307,50 +307,42 @@ void OpenHacksCore::EnterFullscreen()
     
     console::printf("=== EnterFullscreen() START ===");
     
-    bool stateExisted = mSavedWindowState.has_value();
-    console::printf("EnterFullscreen: mSavedWindowState existed before emplace: %s", stateExisted ? "true" : "false");
-    
-    if (stateExisted)
+    if (!mSavedWindowState.has_value())
     {
-        console::printf("EnterFullscreen: Before emplace - wp.rcNormalPosition: left=%d, top=%d, right=%d, bottom=%d (width=%d, height=%d)",
+        console::printf("EnterFullscreen: mSavedWindowState was empty, creating new state");
+        auto& state = mSavedWindowState.emplace();
+        state.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
+        GetWindowPlacement(mainWindow, &state.wp);
+        
+        console::printf("EnterFullscreen: Created new state - wp.showCmd=%d, wp.rcNormalPosition: left=%d, top=%d, right=%d, bottom=%d",
+            state.wp.showCmd,
+            state.wp.rcNormalPosition.left,
+            state.wp.rcNormalPosition.top,
+            state.wp.rcNormalPosition.right,
+            state.wp.rcNormalPosition.bottom);
+    }
+    else
+    {
+        console::printf("EnterFullscreen: mSavedWindowState already exists, preserving wp");
+        console::printf("EnterFullscreen: Existing wp.rcNormalPosition: left=%d, top=%d, right=%d, bottom=%d",
             mSavedWindowState->wp.rcNormalPosition.left,
             mSavedWindowState->wp.rcNormalPosition.top,
             mSavedWindowState->wp.rcNormalPosition.right,
-            mSavedWindowState->wp.rcNormalPosition.bottom,
-            mSavedWindowState->wp.rcNormalPosition.right - mSavedWindowState->wp.rcNormalPosition.left,
-            mSavedWindowState->wp.rcNormalPosition.bottom - mSavedWindowState->wp.rcNormalPosition.top);
+            mSavedWindowState->wp.rcNormalPosition.bottom);
     }
     
-    auto& state = mSavedWindowState.emplace();
-    state.fullscreen = true;
-    state.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
+    mSavedWindowState->fullscreen = true;
     
-    console::printf("EnterFullscreen: Before GetWindowPlacement - wp.rcNormalPosition: left=%d, top=%d, right=%d, bottom=%d",
-        state.wp.rcNormalPosition.left,
-        state.wp.rcNormalPosition.top,
-        state.wp.rcNormalPosition.right,
-        state.wp.rcNormalPosition.bottom);
-    
-    GetWindowPlacement(mainWindow, &state.wp);
-    
-    console::printf("EnterFullscreen: After GetWindowPlacement - wp.showCmd=%d, wp.rcNormalPosition: left=%d, top=%d, right=%d, bottom=%d (width=%d, height=%d)",
-        state.wp.showCmd,
-        state.wp.rcNormalPosition.left,
-        state.wp.rcNormalPosition.top,
-        state.wp.rcNormalPosition.right,
-        state.wp.rcNormalPosition.bottom,
-        state.wp.rcNormalPosition.right - state.wp.rcNormalPosition.left,
-        state.wp.rcNormalPosition.bottom - state.wp.rcNormalPosition.top);
-    
-    RECT windowRect;
-    GetWindowRect(mainWindow, &windowRect);
-    console::printf("EnterFullscreen: Current window rect: left=%d, top=%d, right=%d, bottom=%d (width=%d, height=%d)",
-        windowRect.left, windowRect.top, windowRect.right, windowRect.bottom,
-        windowRect.right - windowRect.left, windowRect.bottom - windowRect.top);
+    console::printf("EnterFullscreen: Final state - fullscreen=%s, wp.rcNormalPosition: left=%d, top=%d, right=%d, bottom=%d",
+        mSavedWindowState->fullscreen ? "true" : "false",
+        mSavedWindowState->wp.rcNormalPosition.left,
+        mSavedWindowState->wp.rcNormalPosition.top,
+        mSavedWindowState->wp.rcNormalPosition.right,
+        mSavedWindowState->wp.rcNormalPosition.bottom);
 
     Utility::EnterFullscreen(mainWindow, mSavedWindowState.value());
 
-    OpenHacksVars::SavedWindowState.get_value().FromWindowState(state);
+    OpenHacksVars::SavedWindowState.get_value().FromWindowState(mSavedWindowState.value());
     
     console::printf("=== EnterFullscreen() END ===");
 }
