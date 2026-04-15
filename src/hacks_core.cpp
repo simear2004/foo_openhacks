@@ -268,11 +268,28 @@ void OpenHacksCore::ExitFullscreen()
     // Exit fullscreen
     if (mSavedWindowState.has_value())
     {
-        Utility::ExitFullscreen(mainWindow, mSavedWindowState.value());
-        mSavedWindowState.reset();
-
-        // Clear fullscreen state in persistent storage
-        OpenHacksVars::SavedWindowState.get_value() = WindowStateData();
+        auto savedState = mSavedWindowState.value();
+        
+        Utility::ExitFullscreen(mainWindow, savedState);
+        
+        // Check if the saved state was maximized
+        bool wasMaximized = (savedState.wp.showCmd == SW_SHOWMAXIMIZED);
+        
+        // Only clear the saved state if it wasn't maximized
+        // If it was maximized, keep the state so Restore() can work
+        if (!wasMaximized)
+        {
+            mSavedWindowState.reset();
+            // Clear fullscreen state in persistent storage
+            OpenHacksVars::SavedWindowState.get_value() = WindowStateData();
+        }
+        else
+        {
+            // Update the saved state: no longer fullscreen, but still maximized
+            mSavedWindowState->fullscreen = false;
+            // Update persistent storage
+            OpenHacksVars::SavedWindowState.get_value().FromWindowState(mSavedWindowState.value());
+        }
     }
     else
     {
