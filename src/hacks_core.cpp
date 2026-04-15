@@ -250,63 +250,35 @@ bool OpenHacksCore::IsMinimized()
 void OpenHacksCore::EnterFullscreen()
 {
     HWND mainWindow = core_api::get_main_window();
-    
-    if (!mSavedWindowState.has_value())
-    {
-        WindowState newState;
-        newState.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
-        GetWindowPlacement(mainWindow, &newState.wp);
-        mSavedWindowState = newState;
-        mMaximizedBeforeFullscreen = false;
-    }
-    else
-    {
-        mMaximizedBeforeFullscreen = true;
-    }
-    
-    mSavedWindowState->fullscreen = true;
+    // Save current window state
+    auto& state = mSavedWindowState.emplace();
+    state.fullscreen = true;
+    state.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
+    GetWindowPlacement(mainWindow, &state.wp);
 
-    WindowState stateForFullscreen = mSavedWindowState.value();
-    Utility::EnterFullscreen(mainWindow, stateForFullscreen);
+    Utility::EnterFullscreen(mainWindow, mSavedWindowState.value());
 
-    OpenHacksVars::SavedWindowState.get_value().FromWindowState(mSavedWindowState.value());
+    // Mark fullscreen state in persistent storage
+    OpenHacksVars::SavedWindowState.get_value().FromWindowState(state);
 }
 
 void OpenHacksCore::ExitFullscreen()
 {
     HWND mainWindow = core_api::get_main_window();
+    // Exit fullscreen
     if (mSavedWindowState.has_value())
     {
-        auto savedState = mSavedWindowState.value();
-        bool hadCaption = (savedState.style & WS_CAPTION) != 0;
-        
-        Utility::ExitFullscreen(mainWindow, savedState);
-        
-        if (!hadCaption && mMaximizedBeforeFullscreen)
-        {
-            mSavedWindowState.reset();
-            
-            SetWindowLongPtr(mainWindow, GWL_STYLE, savedState.style);
-            Utility::EnableWindowShadow(mainWindow, true);
-            
-            WINDOWPLACEMENT wp = savedState.wp;
-            wp.showCmd = SW_SHOWNORMAL;
-            SetWindowPlacement(mainWindow, &wp);
-            
-            SendMessage(mainWindow, WM_SIZE, 0, 0);
-            
-            Maximize();
-            return;
-        }
-        
+        Utility::ExitFullscreen(mainWindow, mSavedWindowState.value());
         mSavedWindowState.reset();
+
+        // Clear fullscreen state in persistent storage
         OpenHacksVars::SavedWindowState.get_value() = WindowStateData();
     }
     else
     {
         const auto newStyle = static_cast<WindowFrameStyle>((int32_t)OpenHacksVars::MainWindowFrameStyle);
         ApplyMainWindowFrameStyle(newStyle);
-        
+
         RECT rect = {};
         GetWindowRect(mainWindow, &rect);
         OffsetRect(&rect, 10, 10);
