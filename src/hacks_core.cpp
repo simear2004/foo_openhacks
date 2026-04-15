@@ -239,12 +239,27 @@ void OpenHacksCore::Restore()
 
 bool OpenHacksCore::IsMaximized()
 {
-    return Utility::IsMaximized(core_api::get_main_window());
+    return mSavedWindowState.has_value() || Utility::IsMaximized(core_api::get_main_window());
 }
 
 bool OpenHacksCore::IsMinimized()
 {
     return Utility::IsMinimized(core_api::get_main_window());
+}
+
+void OpenHacksCore::EnterFullscreen()
+{
+    HWND mainWindow = core_api::get_main_window();
+    // Save current window state
+    auto& state = mSavedWindowState.emplace();
+    state.fullscreen = true;
+    state.style = static_cast<DWORD>(GetWindowLongPtr(mainWindow, GWL_STYLE));
+    GetWindowPlacement(mainWindow, &state.wp);
+
+    Utility::EnterFullscreen(mainWindow, mSavedWindowState.value());
+
+    // Mark fullscreen state in persistent storage
+    OpenHacksVars::SavedWindowState.get_value().FromWindowState(state);
 }
 
 void OpenHacksCore::EnterFullscreen()
@@ -273,43 +288,8 @@ void OpenHacksCore::ExitFullscreen()
     if (mSavedWindowState.has_value())
     {
         auto savedState = mSavedWindowState.value();
-        bool hadCaption = (savedState.style & WS_CAPTION) != 0;
         
         Utility::ExitFullscreen(mainWindow, savedState);
-        
-        if (!hadCaption)
-        {
-            RECT windowRect, workArea;
-            GetWindowRect(mainWindow, &windowRect);
-            
-            HMONITOR monitor = MonitorFromWindow(mainWindow, MONITOR_DEFAULTTONEAREST);
-            if (monitor)
-            {
-                MONITORINFO mi = { sizeof(MONITORINFO) };
-                if (GetMonitorInfo(monitor, &mi))
-                {
-                    workArea = mi.rcWork;
-                    
-                    bool wasMaximized = (windowRect.left == workArea.left &&
-                                        windowRect.top == workArea.top &&
-                                        windowRect.right == workArea.right &&
-                                        windowRect.bottom == workArea.bottom);
-                    
-                    if (wasMaximized)
-                    {
-                        SetWindowLongPtr(mainWindow, GWL_STYLE, savedState.style);
-                        Utility::EnableWindowShadow(mainWindow, true);
-                        
-                        WINDOWPLACEMENT wp = savedState.wp;
-                        wp.showCmd = SW_SHOWNORMAL;
-                        SetWindowPlacement(mainWindow, &wp);
-                        
-                        Maximize();
-                        return;
-                    }
-                }
-            }
-        }
         
         mSavedWindowState.reset();
         OpenHacksVars::SavedWindowState.get_value() = WindowStateData();
