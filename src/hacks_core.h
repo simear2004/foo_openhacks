@@ -114,6 +114,7 @@ private:
     DWORD mInstallHooksWin32Error = ERROR_SUCCESS;
 
     std::optional<WindowState> mSavedWindowState;
+    bool mWasMaximizedBeforeFullscreen = false;
     bool mRequireRevertCursor = false;
     bool mUsedCompositedStyle = false;
 };
