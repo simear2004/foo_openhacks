@@ -101,15 +101,13 @@ struct WindowStateData
     bool fullscreen = false;
     DWORD style = 0;
     WINDOWPLACEMENT wp = { sizeof(WINDOWPLACEMENT) };
-    bool wasCustomMaximized = false;
-    int32_t reserved[7] = {};
+    int32_t reserved[8] = {};
 
     void FromWindowState(const WindowState& state)
     {
         fullscreen = state.fullscreen;
         style = state.style;
         wp = state.wp;
-        wasCustomMaximized = state.wasCustomMaximized;
     }
 
     WindowState ToWindowState() const
@@ -118,7 +116,6 @@ struct WindowStateData
         state.fullscreen = fullscreen;
         state.style = style;
         state.wp = wp;
-        state.wasCustomMaximized = wasCustomMaximized;
         return state;
     }
 };
